@@ -34,7 +34,7 @@ export interface AppActions {
   dismissToast: () => void
 
   // Daten & Regeln
-  /** Ersetzt den kompletten Zustand (Laden, Import, Demo, Löschen) und wertet ihn für heute aus. */
+  /** Ersetzt den kompletten Zustand (Laden, Import, Löschen) und wertet ihn für heute aus. */
   replaceDomain: (domain: DomainState, today: ISODate) => void
   /** Wertet alle abgeschlossenen Tage bis gestern aus (beim Start und bei jedem Tageswechsel). */
   evaluate: (today: ISODate) => void
@@ -89,7 +89,7 @@ function settle(domain: DomainState, today: ISODate): DomainState {
   return focus === evaluated.focus ? evaluated : { ...evaluated, focus }
 }
 
-// Startet leer; persistence.ts lädt den gespeicherten Zustand (oder legt die Demo-Insel an).
+// Startet leer; persistence.ts lädt den gespeicherten Zustand (oder startet mit leerer Insel).
 export const useAppStore = create<AppStore>()((set, get) => {
   /** Wendet eine Editor-Funktion an; gibt sie dieselbe Referenz zurück, bleibt der Store unverändert. */
   const apply = (fn: (domain: DomainState) => DomainState, ui?: (s: AppStore) => Partial<UiState>): boolean => {

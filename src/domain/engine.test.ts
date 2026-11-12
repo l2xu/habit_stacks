@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest'
-import { createDemoWorld } from '@/data/demoWorld'
 import { createFixtureWorld } from '@/test/fixtureWorld'
 import { addDays } from './dates'
 import { canDiscard, canStack, pauseTower, restackBlock, resumeTower, stackBlock } from './editor'
@@ -438,31 +437,5 @@ describe('Test-Welt', () => {
 
     expect(detail(abend)).toEqual([`tower_collapsed@${day(1)}`])
     expect(r.towers['tw-abend']).toMatchObject({ blockIds: ['hb-zaehne'] })
-  })
-})
-
-describe('Demo-Insel', () => {
-  it('ist am Erstellungstag bereits vollständig ausgewertet', () => {
-    const demo = createDemoWorld(D0)
-    expect(evaluateAll(demo, D0)).toBe(demo)
-  })
-
-  it('zeigt drei Türme mit je Anker + einem Geist', () => {
-    const demo = createDemoWorld(D0)
-    expect(demo.towerOrder.map((id) => demo.towers[id]!.name)).toEqual(['Morgenroutine', 'Abendroutine', 'Haushalt'])
-    expect(['hb-lesen', 'hb-abwaschen', 'hb-geschirr'].map((id) => demo.habits[id]!.formation?.doneDays)).toEqual([27, 16, 5])
-  })
-
-  it('wertet den ersten echten Tag nach den Regeln aus', () => {
-    const demo = createDemoWorld(D0)
-    const r = evaluateAll(demo, day(1))
-    const fresh = r.events.slice(demo.events.length)
-    expect(fresh.map((e) => `${e.type}:${'habitId' in e ? e.habitId : ''}`).sort()).toEqual(
-      [
-        'block_broken:hb-geschirr', // Haushalt: zweiter Fehltag in Folge
-        'formation_wobbling:hb-abwaschen',
-        'formation_wobbling:hb-lesen',
-      ].sort(),
-    )
   })
 })

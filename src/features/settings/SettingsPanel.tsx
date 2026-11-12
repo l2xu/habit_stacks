@@ -52,11 +52,12 @@ export function SettingsPanel({ onClose, onDev }: { onClose: () => void; onDev?:
 const LINKS: { label: string; href: string; icon: PixelSprite }[] = [
   { label: 'Website', href: 'https://lukasweihrauch.de/', icon: GLOBE },
   { label: 'GitHub', href: 'https://github.com/l2xu', icon: OCTOCAT },
+  { label: 'Quellcode auf GitHub', href: 'https://github.com/l2xu/habit_stacks', icon: OCTOCAT },
   { label: 'Feedback auf Discord', href: 'https://discord.com/invite/9pFXzs6XRK', icon: GAMEPAD },
   { label: 'Unterstützen auf Ko-fi', href: 'https://ko-fi.com/lukasweihrauch', icon: COFFEE },
 ]
 
-/** "Meine Links": Website, GitHub, Discord und Ko-fi. Öffnen im Browser, nicht in der App. */
+/** "Meine Links": Website, GitHub, Repo, Discord und Ko-fi. Öffnen im Browser, nicht in der App. */
 function LinksSection() {
   return (
     <Section title="Meine Links">

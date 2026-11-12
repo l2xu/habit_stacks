@@ -139,7 +139,7 @@ export function DevPanel({ towerId, onClose }: { towerId: ID | null; onClose: ()
           </div>
         ) : (
           offset > 0 && (
-            <p className="text-[13px] leading-snug text-ink-soft">Kein Verlauf (neu geladen). Zurück in die Gegenwart: Zahnrad → „Demo-Insel neu laden“.</p>
+            <p className="text-[13px] leading-snug text-ink-soft">Kein Verlauf (neu geladen). Zurück in die Gegenwart: Zahnrad → „Alles löschen“ oder ein Backup importieren.</p>
           )
         )}
         {canReplay && (

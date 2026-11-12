@@ -1,7 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { createDemoWorld } from '@/data/demoWorld'
-import { currentDay } from '@/domain/dates'
 import type { ID } from '@/domain/types'
 import { DevPanel } from '@/features/dev/DevPanel'
 import type { EditorRoute } from '@/features/editor/blockDraft'
@@ -55,8 +53,6 @@ export function HomeScreen({ introDone }: { introDone: boolean }) {
   const resumeTower = useAppStore((s) => s.resumeTower)
   const showToast = useAppStore((s) => s.showToast)
   const markEventsSeen = useAppStore((s) => s.markEventsSeen)
-  const replaceDomain = useAppStore((s) => s.replaceDomain)
-  const dayStartsAtHour = useAppStore((s) => s.settings.dayStartsAtHour)
   const [sheet, setSheet] = useState<SheetRoute | null>(null)
   const openSheet = (route: SheetRoute) => {
     sfx('open')
@@ -181,15 +177,6 @@ export function HomeScreen({ introDone }: { introDone: boolean }) {
             <div className="grid w-full max-w-64 gap-2">
               <PixelButton variant="go" onClick={addTower} className="h-12 px-5 text-[17px] font-semibold text-paper">
                 Ersten Turm bauen
-              </PixelButton>
-              <PixelButton
-                onClick={() => {
-                  const day = currentDay(dayStartsAtHour)
-                  replaceDomain(createDemoWorld(day), day)
-                }}
-                className="h-11 px-5 text-[16px] font-semibold"
-              >
-                Demo-Insel ansehen
               </PixelButton>
             </div>
           </div>

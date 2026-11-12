@@ -1,5 +1,4 @@
 import { useRef, useState } from 'react'
-import { createDemoWorld } from '@/data/demoWorld'
 import { currentDay } from '@/domain/dates'
 import { createEmptyState, pickDomain } from '@/domain/state'
 import type { DomainState } from '@/domain/types'
@@ -12,11 +11,10 @@ import { PixelButton } from '@/ui/PixelButton'
 
 const TIME = new Intl.DateTimeFormat('de-DE', { hour: '2-digit', minute: '2-digit' })
 
-/** "Daten & Backup": Export, Import, Demo, Löschen. Die Zeitreise steckt in den DevTools (features/dev). */
+/** "Daten & Backup": Export, Import, Löschen. Die Zeitreise steckt in den DevTools (features/dev). */
 export function DataSection({ onClose }: { onClose: () => void }) {
   const today = useToday()
   const storage = useAppStore((s) => s.ui.storage)
-  const settings = useAppStore((s) => s.settings)
   const replaceDomain = useAppStore((s) => s.replaceDomain)
   const showToast = useAppStore((s) => s.showToast)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -61,10 +59,6 @@ export function DataSection({ onClose }: { onClose: () => void }) {
           </PixelButton>
         )}
         <input ref={fileRef} type="file" accept="application/json,.json" className="hidden" onChange={(e) => void onFile(e.target.files?.[0])} />
-      </SettingRow>
-      <SettingRow label="Demo-Insel neu laden" hint="Ersetzt alles durch die vier Beispiel-Türme.">
-        {/* Immer für das echte Heute – beendet damit auch eine Zeitreise. */}
-        <ConfirmButton onConfirm={() => replace(createDemoWorld(currentDay(settings.dayStartsAtHour)), 'Demo-Insel geladen.')}>Laden</ConfirmButton>
       </SettingRow>
       <SettingRow label="Alles löschen" hint="Entfernt alle Türme, Logs und Einstellungen.">
         <ConfirmButton danger onConfirm={() => replace(createEmptyState(), 'Alle Daten gelöscht.')}>

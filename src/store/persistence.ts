@@ -1,8 +1,7 @@
 import { createStore, del, get, set } from 'idb-keyval'
-import { createDemoWorld } from '@/data/demoWorld'
 import { currentDay } from '@/domain/dates'
 import { DEFAULT_SETTINGS } from '@/domain/rules'
-import { domainChanged, pickDomain } from '@/domain/state'
+import { createEmptyState, domainChanged, pickDomain } from '@/domain/state'
 import type { DomainState, StorageDriver } from '@/domain/types'
 import { validateState } from '@/domain/validate'
 import { useAppStore } from './useAppStore'
@@ -50,8 +49,8 @@ async function pickDriver(): Promise<StorageDriver> {
 // ───────────────────────────── Start & Autosave ─────────────────────────────
 
 /**
- * Lädt und prüft den gespeicherten Zustand, legt beim allerersten Start die
- * Demo-Insel an, wertet bis gestern aus und speichert danach jede Änderung (entprellt).
+ * Lädt und prüft den gespeicherten Zustand, startet beim allerersten Start mit
+ * einer leeren Insel, wertet bis gestern aus und speichert danach jede Änderung (entprellt).
  * Wird einmal vor dem ersten Render aufgerufen.
  */
 export async function startPersistence(): Promise<void> {
@@ -82,7 +81,7 @@ export async function startPersistence(): Promise<void> {
 
   const settings = loaded?.settings ?? DEFAULT_SETTINGS
   const today = currentDay(settings.dayStartsAtHour, settings.devDayOffset)
-  store.getState().replaceDomain(loaded ?? createDemoWorld(today), today)
+  store.getState().replaceDomain(loaded ?? createEmptyState(settings), today)
   if (!writable) return
 
   let saved: DomainState | null = loaded
