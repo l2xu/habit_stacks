@@ -1,0 +1,4 @@
+# Nur api.php ist von außen erreichbar; lib.php und cron.php laufen auf dem Server.
+<FilesMatch "^(lib|cron)\.php$">
+  Require all denied
+</FilesMatch>

@@ -1,0 +1,40 @@
+{
+  "name": "habit-stacks",
+  "private": true,
+  "version": "0.1.0",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc -b",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "release": "sh scripts/release.sh",
+    "push:dev": "HABIT_PUSH_DATA=\"$PWD/push-data\" php -S localhost:8787 -t public",
+    "push:cron": "HABIT_PUSH_DATA=\"$PWD/push-data\" php public/push/cron.php"
+  },
+  "dependencies": {
+    "@fontsource/geist-pixel": "^5.3.0",
+    "@fontsource/silkscreen": "^5.3.0",
+    "framer-motion": "^14.9.0",
+    "idb-keyval": "^6.3.0",
+    "lucide-react": "^1.66.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "zustand": "^5.0.16"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/node": "^26.6.6",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.2",
+    "tailwindcss": "^4.3.3",
+    "typescript": "~7.0.2",
+    "vite": "^8.3.5",
+    "vite-plugin-pwa": "^2.0.0",
+    "vitest": "^5.0.5"
+  }
+}

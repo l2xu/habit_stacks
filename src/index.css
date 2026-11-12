@@ -1,0 +1,185 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-pixel: 'Geist Pixel', ui-sans-serif, system-ui, sans-serif;
+  --font-micro: 'Silkscreen', ui-monospace, monospace;
+
+  --color-haze: #e6ebda;
+  --color-haze-deep: #d3dac3;
+  --color-ink: #2f3833;
+  --color-ink-soft: #5f695d;
+  --color-moss: #a9bb7e;
+  --color-brick: #c9633a;
+  --color-paper: #f1f2ea;
+  --color-focus: #2d5f8a;
+}
+
+@layer base {
+  :root {
+    /* Notch und Home-Indikator: Die Welt läuft darunter weiter, Bedienelemente halten Abstand. */
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    /* Höhe des Fokus-Docks (inkl. Home-Indikator); Welt, Lineal und Toast richten sich danach aus */
+    --dock-h: calc(136px + var(--safe-bottom));
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    margin: 0;
+    background: var(--color-haze-deep);
+    color: var(--color-ink);
+    font-family: var(--font-pixel);
+    color-scheme: light;
+    overscroll-behavior: none;
+    /* Die Seite selbst scrollt nie – nur Inhalte in Sheets. */
+    overflow: hidden;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /*
+   * Installierte App mit durchsichtiger Statusleiste: iOS macht den Viewport beim Start um die Statusleiste
+   * zu kurz (WebKit-Bug 301108), unten bliebe ein Balken. Eine Seite, die mindestens bildschirmhoch ist,
+   * bekommt den vollen Viewport. 100lvh deckelt, damit nichts scrollt, wenn iOS richtig misst.
+   * Falls doch ein Streifen bleibt, ist er wenigstens meerfarben (WORLD.sea, unterer Bildrand).
+   */
+  @media (display-mode: standalone) {
+    html {
+      min-height: min(100lvh, calc(100% + var(--safe-top)));
+    }
+    html,
+    body {
+      background: #a3c6c2;
+    }
+  }
+
+  /* Eingabefelder brauchen Textauswahl, sonst lassen sie sich in Safari nicht bearbeiten. */
+  input,
+  textarea {
+    -webkit-user-select: text;
+    user-select: text;
+  }
+}
+
+@layer components {
+  /*
+   * Pixel-Rahmen mit abgestuften Ecken und Bevel. Zwei Ebenen, weil clip-path
+   * Outline und Box-Shadow nach außen abschneidet:
+   *   Element      = Rahmenfarbe, Ecken ausgeschnitten
+   *   ::before     = Füllung mit Licht-/Schattenkante, Ecken erneut ausgeschnitten
+   * Farben über --frame-ink / --frame-fill / --frame-hi / --frame-lo.
+   */
+  .px-frame {
+    --px: 3px;
+    --notch: polygon(
+      0 var(--px), var(--px) var(--px), var(--px) 0,
+      calc(100% - var(--px)) 0, calc(100% - var(--px)) var(--px), 100% var(--px),
+      100% calc(100% - var(--px)), calc(100% - var(--px)) calc(100% - var(--px)), calc(100% - var(--px)) 100%,
+      var(--px) 100%, var(--px) calc(100% - var(--px)), 0 calc(100% - var(--px))
+    );
+    --frame-ink: #3e463b;
+    --frame-fill: var(--color-paper);
+    --frame-hi: #ffffff;
+    --frame-lo: #dcdfd2;
+    position: relative;
+    isolation: isolate;
+    background: var(--frame-ink);
+    clip-path: var(--notch);
+  }
+  .px-frame::before {
+    content: '';
+    position: absolute;
+    inset: var(--px);
+    z-index: -1;
+    background: var(--frame-fill);
+    clip-path: var(--notch);
+    box-shadow:
+      inset var(--px) var(--px) 0 var(--frame-hi),
+      inset calc(-1 * var(--px)) calc(-1 * var(--px)) 0 var(--frame-lo);
+  }
+
+  .px-stone {
+    --frame-fill: #aab19c;
+    --frame-hi: #c5cbb6;
+    --frame-lo: #8d9580;
+  }
+  .px-go {
+    --frame-ink: #2f3a2b;
+    --frame-fill: #6f8f5b;
+    --frame-hi: #8dab77;
+    --frame-lo: #58744a;
+  }
+  .px-moss {
+    --frame-fill: #cfdcae;
+    --frame-hi: #e3ebcb;
+    --frame-lo: #b3c38f;
+  }
+  .px-gold {
+    --frame-fill: #f1dc9f;
+    --frame-hi: #f8ebc4;
+    --frame-lo: #dcc07a;
+  }
+  .px-blush {
+    --frame-fill: #efcfc2;
+    --frame-hi: #f7e3db;
+    --frame-lo: #dcb0a1;
+  }
+  .px-danger {
+    --frame-ink: #6b3221;
+    --frame-fill: #c9633a;
+    --frame-hi: #dd8762;
+    --frame-lo: #a44e2d;
+  }
+  .px-white {
+    --frame-fill: #ffffff;
+    --frame-hi: #ffffff;
+    --frame-lo: #e4e6dc;
+  }
+  .px-tab {
+    --frame-fill: #59645a;
+    --frame-hi: #6e7a6e;
+    --frame-lo: #4a544b;
+  }
+
+  .px-button {
+    cursor: pointer;
+    transition: transform 60ms steps(1);
+  }
+  .px-button:active {
+    transform: translateY(2px);
+  }
+  .px-button:active::before {
+    box-shadow:
+      inset var(--px) var(--px) 0 var(--frame-lo),
+      inset calc(-1 * var(--px)) calc(-1 * var(--px)) 0 var(--frame-hi);
+  }
+  .px-button:focus-visible,
+  .px-field:focus-within {
+    outline: none;
+    --frame-ink: var(--color-focus);
+    --px: 4px;
+  }
+  .px-button:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
+  }
+
+  .tower-hit:focus-visible .tower-ring {
+    opacity: 1;
+    stroke: var(--color-focus);
+  }
+
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}

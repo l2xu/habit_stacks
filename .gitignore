@@ -1,0 +1,28 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+# dist/ wird bewusst eingecheckt (scripts/release.sh)
+# Push-Dienst: Schlüssel und Abos (public/push/lib.php), nie einchecken – auf dem Server dist/push/data, lokal push-data
+push-data
+public/push/data
+dist/push/data
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
