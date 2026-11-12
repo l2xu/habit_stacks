@@ -1,11 +1,9 @@
 import { useSpring } from 'framer-motion'
 import { useCallback, useEffect, useMemo, useRef, type MouseEvent, type PointerEvent } from 'react'
 import type { ID, TowerVM } from '@/domain/types'
-import { clamp, fitFrame, MAX_ZOOM, rubberBand, type Camera, type CameraFit, type Stage } from '@/features/world/camera'
+import { clamp, fitFrame, MAX_ZOOM, rubberBand, type CameraFit, type Stage } from '@/features/world/camera'
 import { useCameraMoving } from '@/features/world/cameraMoving'
-import { useCameraView } from '@/features/world/useCameraView'
-import { IsoWorld } from '@/features/world/IsoWorld'
-import { useWorldCanvas, WorldCanvas, type WorldCanvasHandle, type WorldHit } from '@/features/world/canvas/WorldCanvas'
+import { WorldCanvas, type WorldCanvasHandle, type WorldHit } from '@/features/world/canvas/WorldCanvas'
 import { useLongPress } from '@/hooks/useLongPress'
 import { effectHeadroom, type TowerEffect } from '@/features/world/effects'
 import { overviewFrame, placeTowers, STEP, towerFrame, type PlacedTower } from '@/features/world/worldLayout'
@@ -97,14 +95,12 @@ interface Drag {
  * Die Insel als Bühne mit Kamera. Übersicht: alle Türme mit Namensschild, seitlich wischbar,
  * wenn sie nicht hineinpassen. Detail: die Kamera fährt per Feder auf einen Turm, die anderen
  * blenden aus; Wischen wechselt zum Nachbarn. Gezeichnet wird die Welt als Canvas (`WorldCanvas`, liest die Kamera
- * jedes Frame); zum Vergleich per DevTools als SVG (die Kamera schreibt dann direkt ins DOM, `useCameraView`).
+ * jedes Frame).
  */
 export function WorldStage({ towers, openId, homeId, insets, effect, onOpen, onEdit, onRubble, onStack, onSwipe }: WorldStageProps) {
   const [ref, size] = useElementSize<HTMLDivElement>()
-  const canvasOn = useWorldCanvas((s) => s.on)
-  const svgRef = useRef<SVGSVGElement>(null)
   const worldRef = useRef<WorldCanvasHandle>(null)
-  /** Canvas: was beim Drücken getroffen wurde – für Halten (Bearbeiten). */
+  /** Was beim Drücken getroffen wurde – für Halten (Bearbeiten). */
   const pressHit = useRef<WorldHit | null>(null)
   const longPress = useLongPress(() => {
     const hit = pressHit.current
@@ -128,8 +124,6 @@ export function WorldStage({ towers, openId, homeId, insets, effect, onOpen, onE
   const cs = useSpring(1, CAMERA)
   useCameraMoving(cx, cy, cs)
   const placedCamera = useRef(false)
-  /** Wohin die Kamerafedern gerade fahren. */
-  const target = useRef<Camera | null>(null)
   /** Übersicht: vom Nutzer verschobene Kamera; null = auf den zuletzt geöffneten Turm. */
   const pan = useRef<number | null>(null)
   const drag = useRef<Drag | null>(null)
@@ -141,7 +135,6 @@ export function WorldStage({ towers, openId, homeId, insets, effect, onOpen, onE
     if (!fit) return
     if (open) pan.current = null
     const x = open ? fit.cam.x : clamp(pan.current ?? home ?? fit.cam.x, fit.minX, fit.maxX)
-    target.current = { ...fit.cam, x }
     if (!placedCamera.current) {
       placedCamera.current = true
       cx.jump(x)
@@ -156,43 +149,23 @@ export function WorldStage({ towers, openId, homeId, insets, effect, onOpen, onE
 
   const readCamera = useCallback(() => ({ x: cx.get(), y: cy.get(), s: cs.get() }), [cx, cy, cs])
 
-  // ── Kamera → SVG, einmal pro Frame, auch wenn sich x, y und Zoom ändern (nur SVG-Welt) ──
-  useCameraView(
-    svgRef,
-    {
-      values: [cx, cy, cs],
-      read: () => ({ x: cx.get(), y: cy.get(), s: cs.get() }),
-      // Ziel der Fahrt; in der Übersicht der ganze Wischbereich.
-      cover: () => {
-        const t = target.current
-        if (!t || !fit) return []
-        return open ? [t] : [t, { ...t, x: fit.minX }, { ...t, x: fit.maxX }]
-      },
-      w: size.width,
-      h: size.height,
-    },
-    [fit, canvasOn],
-  )
-
   // ── Wischen: Übersicht verschieben bzw. in der Detailansicht zum Nachbarn ──
   const onPointerDown = (e: PointerEvent<HTMLDivElement>) => {
     swallowClick.current = false
-    if (canvasOn) {
-      // Canvas: Turm unter dem Finger staucht sich und lässt sich gedrückt halten.
-      const hit = worldRef.current?.hit(e.clientX, e.clientY) ?? null
-      pressHit.current = hit
-      if (hit?.kind === 'tower') {
-        if (e.button === 0) worldRef.current?.press(hit.id)
-        longPress.handlers.onPointerDown(e)
-      }
+    // Turm unter dem Finger staucht sich und lässt sich gedrückt halten.
+    const hit = worldRef.current?.hit(e.clientX, e.clientY) ?? null
+    pressHit.current = hit
+    if (hit?.kind === 'tower') {
+      if (e.button === 0) worldRef.current?.press(hit.id)
+      longPress.handlers.onPointerDown(e)
     }
     if (e.button !== 0 || !fit) return
     drag.current = { x0: e.clientX, y0: e.clientY, cam0: cx.get(), active: false, lastX: e.clientX, lastT: e.timeStamp, v: 0 }
   }
   const onPointerMove = (e: PointerEvent<HTMLDivElement>) => {
     const d = drag.current
-    // Maus über einem Turm (Canvas): Zeiger wie über einem Knopf.
-    if (canvasOn && !d && e.pointerType === 'mouse') e.currentTarget.style.cursor = worldRef.current?.hit(e.clientX, e.clientY) ? 'pointer' : ''
+    // Maus über einem Turm: Zeiger wie über einem Knopf.
+    if (!d && e.pointerType === 'mouse') e.currentTarget.style.cursor = worldRef.current?.hit(e.clientX, e.clientY) ? 'pointer' : ''
     if (!d || !fit) return
     const dx = e.clientX - d.x0
     if (!d.active) {
@@ -223,24 +196,22 @@ export function WorldStage({ towers, openId, homeId, insets, effect, onOpen, onE
     } else {
       const x = clamp(cx.get() - (cancelled ? 0 : (d.v * 260) / cs.get()), fit.minX, fit.maxX)
       pan.current = x
-      if (target.current) target.current = { ...target.current, x }
       cx.set(x)
     }
   }
 
   const tagWidths = useMemo(() => fitTagWidths(placed, overviewZoom(placed, size, insets)), [placed, size, insets])
 
-  // ── Canvas: Antippen öffnet Turm bzw. Schutthaufen, Rechtsklick bearbeitet ──
+  // ── Antippen öffnet Turm bzw. Schutthaufen, Rechtsklick bearbeitet ──
   const onClick = (e: MouseEvent<HTMLDivElement>) => {
     // Nur Klicks auf die Welt selbst – nicht auf Schilder, Plus oder die unsichtbaren Knöpfe.
-    if (!canvasOn || !(e.target instanceof HTMLCanvasElement)) return
+    if (!(e.target instanceof HTMLCanvasElement)) return
     const hit = worldRef.current?.hit(e.clientX, e.clientY)
     if (!hit || longPress.fired()) return
     if (hit.kind === 'tower') onOpen(hit.id)
     else onRubble(hit.id)
   }
   const onContextMenu = (e: MouseEvent<HTMLDivElement>) => {
-    if (!canvasOn) return
     const hit = worldRef.current?.hit(e.clientX, e.clientY) ?? null
     if (hit?.kind !== 'tower') return
     pressHit.current = hit
@@ -266,23 +237,17 @@ export function WorldStage({ towers, openId, homeId, insets, effect, onOpen, onE
     >
       {fit && (
         <>
-          {canvasOn ? (
-            <WorldCanvas
-              ref={worldRef}
-              placed={placed}
-              openId={openId}
-              effect={effect}
-              camera={readCamera}
-              width={size.width}
-              height={size.height}
-              onOpen={onOpen}
-              onRubble={onRubble}
-            />
-          ) : (
-            <svg ref={svgRef} width={size.width} height={size.height} className="absolute inset-0 block">
-              <IsoWorld placed={placed} openId={openId} onOpen={onOpen} onEdit={onEdit} effect={effect} onRubble={onRubble} />
-            </svg>
-          )}
+          <WorldCanvas
+            ref={worldRef}
+            placed={placed}
+            openId={openId}
+            effect={effect}
+            camera={readCamera}
+            width={size.width}
+            height={size.height}
+            onOpen={onOpen}
+            onRubble={onRubble}
+          />
           {placed.map((p) => (
             <TowerTag
               key={p.tower.id}

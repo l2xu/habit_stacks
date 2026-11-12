@@ -1,12 +1,11 @@
 import { cancelFrame, frame, type MotionValue } from 'framer-motion'
 import { useImperativeHandle, useLayoutEffect, useMemo, useRef, useState, type Ref } from 'react'
-import { create } from 'zustand'
 import type { FocusSession, ID } from '@/domain/types'
 import { useLoopsPaused } from '@/ui/Loop'
 import type { Camera } from '../camera'
 import { effectLostIds, type TowerEffect } from '../effects'
 import type { Pt } from '../iso'
-import { groundPlanFor, pileKeyOf, type Above } from '../IsoWorld'
+import { groundPlanFor, pileKeyOf, type Above } from '../groundPlan'
 import { towerLabel } from '../IsoTower'
 import { rubbleLabel } from '../Rubble'
 import { islandFor, type PlacedTower } from '../worldLayout'
@@ -15,9 +14,6 @@ import { drawPicture, FRAME_BUDGET, sweepPictures, watchFonts } from './picture'
 import { LayerPool, type Frame } from './runtime'
 import { boatDrawer, decorDrawer, groundPicture, seaDrawer, shapesPicture, shimmerDrawer, skyBackdrop, skyLifeDrawer, waterfallDrawer, type Drawer } from './scenery'
 import { RubbleSprite, TowerSprite } from './towers'
-
-/** Dev-Schalter zum Vergleichen auf dem Gerät: aus = die Welt ist wieder SVG. Nur im Speicher. */
-export const useWorldCanvas = create<{ on: boolean }>(() => ({ on: true }))
 
 /** So lange nach der letzten Kamerabewegung gilt die Kamera als ruhig – dann wird pixelgenau nachgezeichnet (ms). */
 const SETTLE_MS = 120
@@ -56,7 +52,6 @@ interface WorldCanvasProps {
  * Die Insel als Canvas: Himmel, Meer, Insel, Deko, Türme, Schutthaufen und Effekte zeichnet eine eigene Schleife
  * (einmal pro Frame, im Takt von Framer Motion – Kamerafedern sind dann schon aktualisiert). Was still steht, liegt
  * als fertiges Bild bereit (`picture.ts`), deshalb kostet ein Frame kaum mehr, wenn die Türme wachsen.
- * Gleiche Zeichenreihenfolge und Geometrie wie die SVG-Welt (`IsoWorld`), die per DevTools zum Vergleich bleibt.
  */
 export function WorldCanvas({ placed, openId, effect = null, dropIn = true, focus = null, camera, width, height, onOpen, onRubble, label, ref }: WorldCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)

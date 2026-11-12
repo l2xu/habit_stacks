@@ -7,9 +7,6 @@ import type { DomainState, Habit, ID, ISODate, Tower } from '@/domain/types'
 import { plainTitle } from '@/features/editor/blockDraft'
 import type { NewsTone } from '@/features/news/news'
 import { BlockThumb } from '@/features/world/BlockThumb'
-import { useGroundImage } from '@/features/world/StaticGround'
-import { useCameraTransform } from '@/features/world/useCameraView'
-import { useWorldCanvas } from '@/features/world/canvas/WorldCanvas'
 import { useToday } from '@/hooks/useToday'
 import { useAppStore } from '@/store/useAppStore'
 import { Section, Segmented, SettingRow, Stepper, Toggle } from '@/ui/controls'
@@ -54,9 +51,6 @@ export function DevPanel({ towerId, onClose }: { towerId: ID | null; onClose: ()
   const showToast = useAppStore((s) => s.showToast)
   const history = useDevStore((s) => s.history)
   const canReplay = useDevStore((s) => s.lastJumpEventIds.length > 0)
-  const groundImage = useGroundImage((s) => s.on)
-  const cameraTransform = useCameraTransform((s) => s.on)
-  const worldCanvas = useWorldCanvas((s) => s.on)
   const [step, setStep] = useState(0)
   const days = STEPS[step]!
   const offset = domain.settings.devDayOffset ?? 0
@@ -152,22 +146,6 @@ export function DevPanel({ towerId, onClose }: { towerId: ID | null; onClose: ()
           >
             Neuigkeiten nochmal abspielen
           </PixelButton>
-        )}
-      </Section>
-
-      <Section title="Darstellung">
-        <SettingRow label="Welt als Canvas" hint="Aus: Die Welt ist wieder SVG wie bisher – zum Vergleichen von Leistung und Aussehen. Gilt bis zum Neuladen.">
-          <Toggle label="Welt als Canvas" checked={worldCanvas} onChange={(on) => useWorldCanvas.setState({ on })} />
-        </SettingRow>
-        {!worldCanvas && (
-          <>
-            <SettingRow label="Insel als Bild" hint="Nur SVG. Aus: Insel und Deko bleiben SVG – zum Vergleichen der Leistung. Gilt bis zum Neuladen.">
-              <Toggle label="Insel als Bild" checked={groundImage} onChange={(on) => useGroundImage.setState({ on })} />
-            </SettingRow>
-            <SettingRow label="Kamera als Transform" hint="Nur SVG. Aus: Jede Kamerafahrt rechnet die Welt pro Frame neu (viewBox). Gilt bis zum Neuladen.">
-              <Toggle label="Kamera als Transform" checked={cameraTransform} onChange={(on) => useCameraTransform.setState({ on })} />
-            </SettingRow>
-          </>
         )}
       </Section>
 

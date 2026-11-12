@@ -69,7 +69,6 @@ export function FocusMode({ session }: { session: FocusSession }) {
     cameraZ.set(targetZ)
     zoom.set(targetZoom)
   }, [cameraZ, zoom, targetZ, targetZoom])
-  const target = useMemo(() => ({ z: targetZ, zoom: targetZoom }), [targetZ, targetZoom])
 
   // ── Timer: Licht im Block (ohne die Szene neu zu rendern), bei Ablauf anhalten und Signal geben ──
   const charge = useMotionValue(0)
@@ -130,7 +129,6 @@ export function FocusMode({ session }: { session: FocusSession }) {
           anchorY={anchorY}
           cameraZ={cameraZ}
           zoom={zoom}
-          target={target}
         />
       )}
 

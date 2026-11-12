@@ -48,9 +48,6 @@ export function fitFrame(f: Rect, st: Stage, minZoom: number, maxZoom: number, s
   return { cam: { x: cx, y, s }, minX: cx - slack, maxX: cx + slack }
 }
 
-/** SVG-viewBox für eine Kamera. */
-export const viewBoxOf = (cam: Camera, w: number, h: number) => `${cam.x - w / 2 / cam.s} ${cam.y - h / 2 / cam.s} ${w / cam.s} ${h / cam.s}`
-
 /** Über den Rand hinaus gezogen: nur noch ein Drittel der Bewegung (Gummiband). */
 export function rubberBand(x: number, lo: number, hi: number) {
   if (x < lo) return lo - (lo - x) * 0.35
