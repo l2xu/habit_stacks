@@ -2,7 +2,7 @@ import type { Pt } from './iso'
 import type { Rect } from './worldLayout'
 
 /**
- * Weniger SVG-Elemente bei gleichem Bild: Flächen gleichen Stils werden zu einem Pfad zusammengefasst und stille
+ * Weniger Zeichenaufrufe bei gleichem Bild: Flächen gleichen Stils werden zu einem Pfad zusammengefasst und stille
  * Teile vom Bewegten getrennt – beides nur so weit, wie die Zeichenreihenfolge (Painter's Algorithm) es erlaubt.
  * Zwei Flächen dürfen nur dann die Reihenfolge tauschen, wenn sie sich nicht überdecken.
  */
@@ -172,7 +172,7 @@ export function groupShapes(shapes: Shape[]): { styles: string[]; groupOf: numbe
 /**
  * Trennt Stilles von Bewegtem (Liste in Zeichenreihenfolge). Stilles darf ins Hintergrundbild unter allem Bewegten –
  * außer es überdeckt etwas Bewegtes, das vor ihm gezeichnet wird. Dann muss es mit nach oben, und mit ihm alles
- * Stille, das es seinerseits überdeckt. Ergebnis: true = oben (bleibt SVG über dem Bild).
+ * Stille, das es seinerseits überdeckt. Ergebnis: true = oben (wird über dem Bild gezeichnet).
  */
 export function liftAbove(items: { moving: boolean; polys: Poly[] }[]): boolean[] {
   const above: Poly[] = []

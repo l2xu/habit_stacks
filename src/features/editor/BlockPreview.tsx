@@ -18,7 +18,7 @@ export function BlockPreview({ block }: { block: BlockVM }) {
         <GhostStripes />
         {/* Kontaktschatten */}
         <polygon points={toPoints([project(-r, -r), project(r, -r), project(r, r), project(-r, r)])} fill="#000" opacity={0.08} />
-        <VoxelBlock block={block} geo={geo} dropIn={false} />
+        <VoxelBlock block={block} geo={geo} />
       </svg>
     </div>
   )

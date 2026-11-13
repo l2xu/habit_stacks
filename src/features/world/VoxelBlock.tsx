@@ -17,37 +17,18 @@ const LINE_H = 1.15
 export const LABEL_FONT = `'Geist Pixel', ui-sans-serif, system-ui, sans-serif`
 export const MICRO_FONT = `'Silkscreen', ui-monospace, monospace`
 
-interface VoxelBlockProps {
-  block: BlockVM
-  geo: BoxGeometry
-  /** Verzögerung der Fall-Animation beim ersten Rendern (Sekunden). */
-  delay?: number
-  /** false: Block steht sofort, ohne Fall-Animation (Fokus-Modus). */
-  dropIn?: boolean
-  /** Es stehen noch Blöcke darauf – ein bröckelnder Block kippt dann nicht. */
-  carrying?: boolean
-}
-
-export const VoxelBlock = memo(function VoxelBlock({ block, geo, delay = 0, dropIn = true, carrying = false }: VoxelBlockProps) {
+/**
+ * Ein Block als SVG – für die Vorschau im Editor: Geist oder fester Block (Anker, verfestigt; Bröckeln zeigt nur die
+ * Insel). Auf der Insel zeichnet `canvas/towers.ts` die Blöcke mit den gemeinsamen Formen und Animationen von hier.
+ */
+export const VoxelBlock = memo(function VoxelBlock({ block, geo }: { block: BlockVM; geo: BoxGeometry }) {
   const pal = BLOCK_PALETTE[block.color]
-
+  if (block.visual === 'forming') return <FormingBlock block={block} geo={geo} pal={pal} />
   return (
-    <motion.g
-      initial={dropIn ? { y: -90, opacity: 0 } : false}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ y: { type: 'spring', stiffness: 380, damping: 22, delay }, opacity: { duration: 0.15, delay } }}
-      // Aufsetzen hörbar machen – höhere Blöcke klingen etwas heller.
-      onAnimationComplete={dropIn ? () => sfx('land', 0.85 + block.level * 0.07) : undefined}
-    >
-      {block.visual === 'forming' && <FormingBlock block={block} geo={geo} pal={pal} />}
-      {block.visual === 'crumbling' && <CrumblingBlock block={block} geo={geo} pal={pal} carrying={carrying} />}
-      {(block.visual === 'solid' || block.visual === 'anchor') && (
-        <>
-          <IsoBox geo={geo} palette={pal} textureSeed={block.id} />
-          <BlockLabels block={block} geo={geo} color={pal.text} />
-        </>
-      )}
-    </motion.g>
+    <>
+      <IsoBox geo={geo} palette={pal} textureSeed={block.id} />
+      <BlockLabels block={block} geo={geo} color={pal.text} />
+    </>
   )
 })
 
@@ -299,44 +280,6 @@ export function crumbleBits(geo: BoxGeometry): { at: Pt; loop: LoopSpec }[] {
     at: { x: geo.W0.x + (geo.S0.x - geo.W0.x) * t, y: geo.W0.y + (geo.S0.y - geo.W0.y) * t },
     loop: { values: { opacity: [0, 1, 0], y: [0, 8, 18] }, duration: 1.1, repeatDelay: 1.2, delay: i * 0.45, ease: 'easeIn' },
   }))
-}
-
-function CrumblingBlock({ block, geo, pal, carrying }: { block: BlockVM; geo: BoxGeometry; pal: FacePalette; carrying: boolean }) {
-  const p = block.crumbleProgress ?? 0
-  // Drehpunkt: rechte untere Ecke – der Block hebt links ab.
-  const bboxH = geo.S0.y - geo.N1.y
-  const originY = (geo.E0.y - geo.N1.y) / bboxH
-  const present = useMemo(() => crumblingStones(block.id, p, carrying), [block.id, p, carrying])
-  const layerH = geo.height / MASONRY_LAYERS
-
-  return (
-    <>
-      <Loop origin={`100% ${originY * 100}%`} loop={crumbleWobble(p, carrying)}>
-        <Stones geo={geo} pieces={present} pal={pal} />
-        {/* Beschriftung auf den unteren Schichten, die (fast) heil bleiben */}
-        <FaceLabel
-          origin={{ x: geo.W1.x, y: geo.W1.y + layerH }}
-          side="left"
-          faceW={geo.faceW}
-          h={geo.height - layerH}
-          text={block.title}
-          color={pal.text}
-          fontSize={10}
-        />
-      </Loop>
-
-      <WobbleMarks geo={geo} />
-
-      {/* Bröckelnde Pixel */}
-      {crumbleBits(geo).map(({ at, loop }, i) => (
-        <g key={i} transform={`translate(${at.x} ${at.y})`}>
-          <Loop loop={loop}>
-            <rect width={3} height={3} fill={pal.right} />
-          </Loop>
-        </g>
-      ))}
-    </>
-  )
 }
 
 /** Breite des Zähler-Schildchens (Silkscreen 8 px). */

@@ -1,8 +1,6 @@
-import { memo } from 'react'
-import { Loop, type LoopSpec } from '@/ui/Loop'
-import { IsoBox } from './IsoBox'
-import { boxGeometry, K, project, toPoints } from './iso'
-import { horizonOf, perIsland, SEA_DROP, type Island } from './island'
+import type { LoopSpec } from '@/ui/Loop'
+import { boxGeometry, K, project } from './iso'
+import { horizonOf, perIsland, SEA_DROP } from './island'
 import { pathOf, rectPath } from './paint'
 import { WORLD } from './palette'
 import { seededRandom } from './random'
@@ -79,54 +77,6 @@ export const seaShapes = perIsland((island) => {
     .join('')
   return { horizon, skirt, foam, waves, islets }
 })
-
-/**
- * Meer rund um die Insel bis an alle Ränder: Richtung Horizont verschwimmt es im Dunst.
- * Dazu Wellen, die Gischt an der Küste und ein dunklerer Unterwasser-Saum.
- * Liegt unter der Insel (vor IsoIsland zeichnen).
- */
-export const IsoSea = memo(function IsoSea({ island }: { island: Island }) {
-  const { horizon, skirt, foam, waves, islets } = seaShapes(island)
-
-  return (
-    <g pointerEvents="none">
-      <defs>
-        <linearGradient id="sea-fade" gradientUnits="userSpaceOnUse" x1={0} y1={horizon} x2={0} y2={horizon + HAZE}>
-          <stop offset={0} stopColor={WORLD.seaHaze} />
-          <stop offset={0.55} stopColor={WORLD.sea} />
-          <stop offset={1} stopColor={WORLD.sea} />
-        </linearGradient>
-      </defs>
-      <rect x={-8000} y={horizon} width={16000} height={12000} fill="url(#sea-fade)" />
-      <line x1={-8000} x2={8000} y1={horizon + 0.5} y2={horizon + 0.5} stroke="#fff" strokeOpacity={0.6} strokeWidth={1} />
-
-      {/* Ferne Inselchen am Horizont */}
-      {islets.map((it, n) => (
-        <g key={n} transform={`translate(${it.x} ${it.y}) scale(${it.s})`} opacity={0.45}>
-          {ISLET_BOXES.map((b, k) => (
-            <IsoBox key={k} geo={b.geo} palette={b.palette} bevel={false} />
-          ))}
-        </g>
-      ))}
-
-      {/* Unterwasser-Saum und Gischt entlang der vorderen Küste */}
-      <path d={skirt} fill={WORLD.seaDeep} />
-      <Loop loop={FOAM_PULSE}>
-        <path d={foam} fill="none" stroke={WORLD.foam} strokeWidth={2.5} strokeLinecap="square" />
-      </Loop>
-
-      {/* Wellen */}
-      <g fill={WORLD.wave} shapeRendering="crispEdges">
-        {WAVE_GROUPS.map((group, g) => (
-          <Loop key={g} loop={wavePulse(group)}>
-            <path d={waves[g]} />
-          </Loop>
-        ))}
-      </g>
-    </g>
-  )
-})
-
 /** Wo das Boot vor der Insel treibt. */
 export const boatSpot = perIsland((island) => {
   const xs = island.tiles.map((t) => project(t.i + 0.5, t.j + 0.5).x)
@@ -145,23 +95,3 @@ export const BOAT = {
   drift: { values: { x: [-90, 90, -90] }, duration: 70 } satisfies LoopSpec,
   rock: { values: { y: [0, -2, 0], rotate: [-2, 2, -2] }, duration: 3.4 } satisfies LoopSpec,
 }
-
-/** Kleines Segelboot, das vor der Insel hin und her treibt. Über der Insel zeichnen. */
-export const Boat = memo(function Boat({ island }: { island: Island }) {
-  const at = boatSpot(island)
-  return (
-    <g transform={`translate(${at.x} ${at.y})`} pointerEvents="none">
-      <Loop loop={BOAT.drift}>
-        <Loop loop={BOAT.rock}>
-          <polygon points={toPoints(BOAT.shadow)} fill={WORLD.seaDeep} />
-          {BOAT.boxes.map((geo, k) => (
-            <IsoBox key={k} geo={geo} palette={WORLD.trunk} bevel={false} />
-          ))}
-          {BOAT.sails.map((sail, k) => (
-            <polygon key={k} points={toPoints(sail.pts)} fill={sail.fill} stroke={sail.stroke} strokeWidth={1} strokeLinejoin="round" />
-          ))}
-        </Loop>
-      </Loop>
-    </g>
-  )
-})

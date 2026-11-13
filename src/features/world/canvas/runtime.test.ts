@@ -3,7 +3,7 @@ import { DECOR_LOOPS } from '../Decor'
 import { drift, twinkle } from '../Sky'
 import { keyTrack, loop, springTrack } from './runtime'
 
-describe('Dauer-Animationen im Canvas (wie die Web Animations der SVG-Welt)', () => {
+describe('Dauer-Animationen im Canvas (wie die Web Animations von `Loop`)', () => {
   it('Drift: lineare Bewegung, Phase über negative Verzögerung', () => {
     const l = loop(drift(1000, 100, 0.25))
     expect(l.at(0).x).toBeCloseTo(250)

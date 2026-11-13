@@ -54,7 +54,7 @@ export function IsoBox({ geo, palette, textureSeed, bevel = true }: IsoBoxProps)
 
 /**
  * Mehrere glatte Quader (ohne Bevel und Textur) wie lauter `IsoBox` in dieser Reihenfolge, aber zu wenigen Pfaden
- * zusammengefasst (`mergeShapes`) – für Mini-Würfel und Wolken. `geos` stabil halten (useMemo).
+ * zusammengefasst (`mergeShapes`) – für die Mini-Würfel. `geos` stabil halten (useMemo).
  */
 export function BoxPaths({ geos, palette, edge = 1.25 }: { geos: BoxGeometry[]; palette: FacePalette; edge?: number }) {
   const paths = useMemo(

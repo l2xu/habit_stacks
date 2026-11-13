@@ -16,7 +16,7 @@ export interface TowerLayout {
 /**
  * Stapelt die Blöcke eines Turms; Weltursprung (ox, oy) ist die Mitte der Anker-Grundfläche.
  * `prev`: frühere Lage desselben Turms am selben Ursprung – unveränderte Blöcke auf gleicher Höhe behalten ihren
- * Eintrag (samt Geometrie), damit `VoxelBlock` (memo) nicht neu rendert.
+ * Eintrag (samt Geometrie), damit die Caches der Canvas-Welt (je Geometrie) weiter greifen.
  */
 export function layoutTower(tower: TowerVM, ox: number, oy: number, prev?: TowerLayout): TowerLayout {
   let z = 0

@@ -24,7 +24,7 @@ export interface CameraFit {
 
 const SIDE = 12
 
-/** Stärkster Zoom der Welt (Detailansicht eines kleinen Turms) – bestimmt auch die Schärfe von `StaticGround`. */
+/** Stärkster Zoom der Welt (Detailansicht eines kleinen Turms). */
 export const MAX_ZOOM = 1.6
 
 export const clamp = (n: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, n))

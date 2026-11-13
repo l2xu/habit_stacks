@@ -122,8 +122,8 @@ const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b)
 
 /**
  * Teilt unveränderte Teile mit dem vorigen View-Modell desselben Turms: Ist `next` inhaltlich gleich, kommt `prev`
- * zurück, sonst `next` mit allen unveränderten Blöcken aus `prev`. So rendern memoisierte Türme und Blöcke
- * (`IsoTower`, `VoxelBlock`) nur neu, wenn sich bei ihnen etwas ändert – ein Häkchen nur den einen Block.
+ * zurück, sonst `next` mit allen unveränderten Blöcken aus `prev`. So behalten unveränderte Blöcke ihre Lage samt
+ * Geometrie (`layoutTower`), und die Caches der Canvas-Welt greifen weiter – ein Häkchen ändert nur den einen Block.
  */
 export function reuseUnchanged(prev: TowerVM | undefined, next: TowerVM): TowerVM {
   if (!prev) return next

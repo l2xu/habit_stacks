@@ -1,7 +1,7 @@
 import type { BoxGeometry, Pt } from '@/features/world/iso'
 import type { LoopSpec } from '@/ui/Loop'
 
-/** Markierungen im Fokus-Modus – gemeinsam für SVG (`FocusScene`) und Canvas (`canvas/focus.ts`). */
+/** Markierungen im Fokus-Modus, gezeichnet in `canvas/focus.ts`. */
 
 /** Markierung des aktiven Blocks: laufende Kontur, Pfeil (Treppe aus Rechtecken) links unten. */
 export const ACTIVE = {

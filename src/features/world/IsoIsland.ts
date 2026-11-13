@@ -1,8 +1,7 @@
-import { memo, useMemo, type SVGProps } from 'react'
-import { Loop, type LoopSpec } from '@/ui/Loop'
-import { faceRect, leftFaceMatrix, project, rightFaceMatrix, toPoints, type Pt } from './iso'
+import type { LoopSpec } from '@/ui/Loop'
+import { faceRect, project, type Pt } from './iso'
 import { SEA_DROP, WATER_DROP, type Island, type IslandTile } from './island'
-import { hull, mergeShapes, polyOf, rectPath, shapeOf, type Poly, type Shape } from './paint'
+import { hull, polyOf, rectPath, shapeOf, type Poly, type Shape } from './paint'
 import { WORLD } from './palette'
 import { seededRandom } from './random'
 
@@ -29,14 +28,6 @@ export type IslandPiece = { kind: 'shape'; shape: Shape } | { kind: 'fall'; fall
 
 /** Stil-Schlüssel der Inselflächen: Farbe + Art. */
 type IslandStyle = `${string} ${'top' | 'side' | 'tuft'}`
-
-/** Attribute je Stil. Rand in Flächenfarbe, damit zwischen Nachbarflächen keine hellen Nähte durchscheinen. */
-function islandStyle(style: string): SVGProps<SVGPathElement> {
-  const [fill, kind] = style.split(' ')
-  if (kind === 'tuft') return { fill, shapeRendering: 'crispEdges' }
-  if (kind === 'top') return { fill, stroke: fill, strokeWidth: 0.6, strokeLinejoin: 'round' }
-  return { fill, stroke: fill, strokeWidth: 0.5 }
-}
 
 export const sprayRects = ({ bottom: [a, b] }: Fall) =>
   SPRAY.map((f) => ({ x: a.x + (b.x - a.x) * f - 3, y: a.y + (b.y - a.y) * f - 1, w: 6, h: 3 }))
@@ -100,18 +91,6 @@ export function islandPieces(island: Island): IslandPiece[] {
   return out
 }
 
-/** Inselflächen, zu wenigen Pfaden zusammengefasst (siehe `mergeShapes`). */
-export const IslandPaths = memo(function IslandPaths({ shapes }: { shapes: Shape[] }) {
-  const paths = useMemo(() => mergeShapes(shapes), [shapes])
-  return (
-    <g pointerEvents="none">
-      {paths.map((p, n) => (
-        <path key={n} d={p.d} {...islandStyle(p.style)} />
-      ))}
-    </g>
-  )
-})
-
 /**
  * Streifen eines Wasserfalls in Flächenkoordinaten. Ein Streifen läuft von −6 bis h + 2. Alle Streifen stehen zweimal
  * übereinander und laufen als Ganzes eine Runde nach unten – der obere Satz rückt nahtlos nach, wenn der untere aus
@@ -131,33 +110,6 @@ export function fallStreaks({ top, bottom }: Fall) {
 export const SPRAY_PULSE: LoopSpec = { values: { opacity: [0.5, 1, 0.5] }, duration: 0.9 }
 export const shimmerPulse = (delay: number): LoopSpec => ({ values: { opacity: [0, 0.75, 0] }, duration: 2.4, delay })
 
-/** Wasserfall über eine Seitenfläche: helle Streifen laufen nach unten. */
-export const Waterfall = memo(function Waterfall({ fall }: { fall: Fall }) {
-  const { side, top, bottom } = fall
-  const { h, d, loop } = fallStreaks(fall)
-  const matrix = side === 'left' ? leftFaceMatrix(top[0]) : rightFaceMatrix(top[0])
-  const clip = `fall-${side}-${Math.round(top[0].x)}`
-  return (
-    <g pointerEvents="none">
-      <polygon points={toPoints([top[0], top[1], bottom[1], bottom[0]])} fill={WORLD.pond} />
-      <g transform={matrix}>
-        <clipPath id={clip}>
-          <rect width={24} height={h} />
-        </clipPath>
-        <g clipPath={`url(#${clip})`} fill={WORLD.foam} shapeRendering="crispEdges">
-          <Loop loop={loop}>
-            <path d={d} />
-          </Loop>
-        </g>
-      </g>
-      {/* Gischt am Fuß */}
-      <Loop fill={WORLD.foam} shapeRendering="crispEdges" loop={SPRAY_PULSE}>
-        <path d={sprayRects(fall).map((r) => rectPath(r.x, r.y, r.w, r.h)).join('')} />
-      </Loop>
-    </g>
-  )
-})
-
 /** Lichtreflexe auf Teich und Bach: je Gruppe die Rechtecke (Weltkoordinaten). */
 export function shimmerRects(island: Island) {
   const groups = SHIMMER_DELAYS.map(() => [] as { x: number; y: number; w: number; h: number }[])
@@ -169,17 +121,3 @@ export function shimmerRects(island: Island) {
     })
   return groups
 }
-
-/** Kleine Lichtreflexe auf Teich und Bach. */
-export const PondShimmer = memo(function PondShimmer({ island }: { island: Island }) {
-  const groups = useMemo(() => shimmerRects(island).map((rects) => rects.map((r) => rectPath(r.x, r.y, r.w, r.h)).join('')), [island])
-  return (
-    <g fill="#fff" shapeRendering="crispEdges" pointerEvents="none">
-      {SHIMMER_DELAYS.map((delay, g) => (
-        <Loop key={g} loop={shimmerPulse(delay)}>
-          <path d={groups[g]} />
-        </Loop>
-      ))}
-    </g>
-  )
-})

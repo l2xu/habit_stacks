@@ -66,7 +66,7 @@ function rubbleArea(x: number, y: number): Poly {
 }
 
 /**
- * Teilt die Welt in Bild und SVG. Ins Bild darf nur, was still steht und nichts Bewegtem in der Zeichenreihenfolge
+ * Teilt die Welt in stilles Bild und Bewegtes. Ins Bild darf nur, was still steht und nichts Bewegtem in der Zeichenreihenfolge
  * folgt, das es überdeckt (`liftAbove`) – so bleibt z. B. ein Busch vor einem Turm über dem Turm.
  */
 export function planGround(island: Island, count: number, pileIndices: number[]): GroundPlan {

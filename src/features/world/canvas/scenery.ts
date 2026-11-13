@@ -260,7 +260,7 @@ export function shapesPicture(shapes: Shape[]): Picture {
   return { bounds: unite(...shapes.map((s) => boundsOf(s.poly.pts, 1))), draw: (ctx) => drawIslandShapes(ctx, paths) }
 }
 
-/** Boden unter allem Bewegten: Inselflächen und stille Deko in Zeichenreihenfolge (wie `StaticGround`). */
+/** Boden unter allem Bewegten: Inselflächen und stille Deko in Zeichenreihenfolge (`GroundPlan.still`). */
 export function groundPicture(shapes: Shape[], decor: { item: DecorItem; part: DecorPart }[]): Picture {
   const paths = mergedIsland(shapes)
   const bounds = unite(...shapes.map((s) => boundsOf(s.poly.pts, 2)), ...decor.flatMap((d) => decorParts(d.item).filter((p) => p.part === d.part).map((p) => p.bounds)))

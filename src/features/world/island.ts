@@ -43,7 +43,7 @@ interface Origin {
 /** Horizont-y für eine Insel: dahinter beginnt der Himmel. */
 export const horizonOf = (island: Island) => island.backY - HORIZON_GAP
 
-/** Einmal je Insel rechnen (Inseln sind je Turmanzahl gecacht) – SVG- und Canvas-Welt teilen sich das Ergebnis. */
+/** Einmal je Insel rechnen (Inseln sind je Turmanzahl gecacht) – Startseite und Fokus-Modus teilen sich das Ergebnis. */
 export function perIsland<T>(build: (island: Island) => T): (island: Island) => T {
   const memo = new WeakMap<Island, T>()
   return (island) => {

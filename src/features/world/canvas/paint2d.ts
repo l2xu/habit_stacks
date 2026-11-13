@@ -7,7 +7,7 @@ import type { Rect } from '../worldLayout'
 import type { Ctx } from './runtime'
 
 /**
- * Zeichen-Bausteine der Canvas-Welt – dieselben Formen, Farben und Linien wie die SVG-Komponenten
+ * Zeichen-Bausteine der Canvas-Welt – dieselben Formen, Farben und Linien wie die SVG-Bausteine (`IsoBox`, `VoxelBlock`)
  * (Polygone, Quader, zusammengefasste Pfade, Schrift auf Blockflächen, Geister-Streifen).
  */
 

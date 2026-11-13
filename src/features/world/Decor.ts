@@ -1,7 +1,5 @@
-import { memo } from 'react'
-import { Loop, type LoopSpec } from '@/ui/Loop'
-import { IsoBox } from './IsoBox'
-import { boxGeometry, leftFaceMatrix, project, toPoints, type BoxGeometry } from './iso'
+import type { LoopSpec } from '@/ui/Loop'
+import { boxGeometry, project, type BoxGeometry } from './iso'
 import { WATER_DROP, type DecorItem } from './island'
 import { WORLD } from './palette'
 import type { Rect } from './worldLayout'
@@ -9,7 +7,7 @@ import type { Rect } from './worldLayout'
 type Item<K extends DecorItem['kind']> = Extract<DecorItem, { kind: K }>
 
 /**
- * Teil eines Deko-Objekts: `still` darf ins Hintergrundbild (`StaticGround`), `moving` bewegt sich und bleibt SVG.
+ * Teil eines Deko-Objekts: `still` darf ins Hintergrundbild (`groundPlan`), `moving` bewegt sich und wird jedes Frame gezeichnet.
  * Nur der Baum hat beides: Stamm und Schatten stehen, die Krone wiegt sich.
  */
 export type DecorPart = 'still' | 'moving'
@@ -167,135 +165,3 @@ export const DECOR_LOOPS = {
 
 /** Schmetterling: zwei Flügel und Körper (relativ zur Flugbahn). */
 export const BUTTERFLY = { wings: [{ x: -4, y: -2, w: 3, h: 3 }, { x: 1, y: -2, w: 3, h: 3 }], body: { x: -0.5, y: -2.5, w: 1, h: 4 } }
-
-// ───────────────────────────── Zeichnen ─────────────────────────────
-
-export const Decor = memo(function Decor({ item, part }: { item: DecorItem; part: DecorPart }) {
-  switch (item.kind) {
-    case 'tuft':
-      return (
-        <g pointerEvents="none">
-          {tuftBoxes(item).map((geo, n) => (
-            <IsoBox key={n} geo={geo} palette={WORLD.tuft} bevel={false} />
-          ))}
-        </g>
-      )
-    case 'flower': {
-      const { stem, petals, dot } = flowerParts(item)
-      return (
-        <g pointerEvents="none">
-          <IsoBox geo={stem} palette={WORLD.tuft} bevel={false} />
-          <rect x={petals.x} y={petals.y} width={petals.w} height={petals.h} fill={item.color} stroke="#00000022" strokeWidth={0.6} shapeRendering="crispEdges" />
-          <rect x={dot.x} y={dot.y} width={dot.w} height={dot.h} fill={WORLD.mustardDot} shapeRendering="crispEdges" />
-        </g>
-      )
-    }
-    case 'stone':
-      return (
-        <g pointerEvents="none">
-          <IsoBox geo={boxGeometry(item.x, item.y, item.half, 0, 3)} palette={WORLD.stone} bevel={false} />
-        </g>
-      )
-    case 'tree':
-      return <Tree item={item} part={part} />
-    case 'bush':
-      return <Bush item={item} />
-    case 'reed':
-      return (
-        <g pointerEvents="none">
-          {reedBoxes(item).map((b, n) => (
-            <IsoBox key={n} geo={b.geo} palette={b.palette} bevel={false} />
-          ))}
-        </g>
-      )
-    case 'lily': {
-      const { pad, bloom } = lilyParts(item)
-      return (
-        <Loop pointerEvents="none" loop={DECOR_LOOPS.lily}>
-          <polygon points={toPoints(pad)} fill={WORLD.lily} />
-          <rect x={bloom.x} y={bloom.y} width={bloom.w} height={bloom.h} fill="#f3d4cd" shapeRendering="crispEdges" />
-        </Loop>
-      )
-    }
-    case 'butterfly':
-      return <Butterfly x={item.x} y={item.y} color={item.color} />
-    case 'frog':
-      return <Frog item={item} />
-  }
-})
-
-/** Laub- oder Nadelbaum aus Voxeln; die Krone wiegt sich leicht im Wind (Teil `moving`), Stamm und Schatten stehen. */
-function Tree({ item, part }: { item: Item<'tree'>; part: DecorPart }) {
-  const { shadow, trunk, crown } = treeGeometry(item)
-  if (part === 'still') {
-    return (
-      <g pointerEvents="none">
-        <ellipse cx={shadow.cx} cy={shadow.cy} rx={shadow.rx} ry={shadow.ry} fill="#000" opacity={0.08} />
-        <IsoBox geo={trunk} palette={WORLD.trunk} bevel={false} />
-      </g>
-    )
-  }
-  return (
-    <Loop pointerEvents="none" origin="50% 100%" loop={DECOR_LOOPS.crown(item.size)}>
-      {crown.map((geo, n) => (
-        <IsoBox key={n} geo={geo} palette={item.pine ? WORLD.leafDark : WORLD.leaf} textureSeed={`tree-${item.x.toFixed(2)}-${n}`} bevel={false} />
-      ))}
-    </Loop>
-  )
-}
-
-function Bush({ item }: { item: Item<'bush'> }) {
-  const { body, top } = bushBoxes(item)
-  const s = item.size
-  return (
-    <g pointerEvents="none">
-      <IsoBox geo={body} palette={WORLD.bush} bevel={false} />
-      <IsoBox geo={top} palette={WORLD.bush} bevel={false} />
-      {item.berries && (
-        <g transform={leftFaceMatrix(body.W1)} fill="#c9633a" shapeRendering="crispEdges">
-          {berryRects(s).map((r, i) => (
-            <rect key={i} x={r.x} y={r.y} width={2} height={2} />
-          ))}
-        </g>
-      )}
-    </g>
-  )
-}
-
-/** Schmetterling, der in kleinen Bögen über einer Blume flattert. */
-function Butterfly({ x, y, color }: { x: number; y: number; color: string }) {
-  const p = project(x, y, 18)
-  const { wings, body } = BUTTERFLY
-  return (
-    <g transform={`translate(${p.x} ${p.y})`} pointerEvents="none">
-      <Loop loop={DECOR_LOOPS.flutter(x, y)}>
-        <Loop loop={DECOR_LOOPS.wings}>
-          {wings.map((w, i) => (
-            <rect key={i} x={w.x} y={w.y} width={w.w} height={w.h} fill={color} stroke="#00000030" strokeWidth={0.5} />
-          ))}
-          <rect x={body.x} y={body.y} width={body.w} height={body.h} fill={WORLD.ink} />
-        </Loop>
-      </Loop>
-    </g>
-  )
-}
-
-/** Kleines Voxel-Maskottchen am Teich; hüpft gelegentlich. */
-function Frog({ item }: { item: Item<'frog'> }) {
-  const { foot, body, eyeL, eyeR } = frogBoxes(item)
-
-  return (
-    <Loop pointerEvents="none" loop={DECOR_LOOPS.frog}>
-      <IsoBox geo={foot} palette={WORLD.frog} bevel={false} />
-      <IsoBox geo={body} palette={WORLD.frog} bevel={false} />
-      <IsoBox geo={eyeR} palette={WORLD.eye} bevel={false} />
-      <IsoBox geo={eyeL} palette={WORLD.eye} bevel={false} />
-      <g fill={WORLD.ink} shapeRendering="crispEdges">
-        <rect transform={leftFaceMatrix(eyeL.W1)} x={1.5} y={1.5} width={3} height={3} />
-        <rect transform={leftFaceMatrix(eyeR.W1)} x={1.5} y={1.5} width={3} height={3} />
-        {/* Mund auf der Vorderseite */}
-        <rect transform={leftFaceMatrix(body.W1)} x={4} y={7} width={9} height={1.5} opacity={0.6} />
-      </g>
-    </Loop>
-  )
-}

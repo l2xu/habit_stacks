@@ -28,9 +28,8 @@ import {
 } from './runtime'
 
 /**
- * Türme und Schutthaufen im Canvas – wie `IsoTower`, `VoxelBlock`, `Rubble` und `TowerEffects`. Was die SVG-Welt
- * React und Framer Motion überlässt (wann ein Block erschien, welche Würfel neu sind, wann ein Effekt begann), merkt
- * sich hier ein Zustand je Turm. Bewegungen sind Zeitfunktionen mit denselben Federn und Keyframes.
+ * Türme und Schutthaufen im Canvas. Was sonst React und Framer Motion übernähmen (wann ein Block erschien, welche
+ * Würfel neu sind, wann ein Effekt begann), merkt sich hier ein Zustand je Turm. Bewegungen sind Zeitfunktionen mit denselben Federn und Keyframes.
  */
 
 /** Fokus-Modus: ergänzt die Darstellung eines Blocks (Markierung, Haken, Timer-Licht). */

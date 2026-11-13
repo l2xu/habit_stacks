@@ -4,7 +4,7 @@ import type { Pt } from '../iso'
 import type { Rect } from '../worldLayout'
 
 /**
- * Laufzeit der Canvas-Welt: was ein Frame weiß, Dauer-Animationen (`LoopSpec` wie bei den SVG-Loops) und einmalige
+ * Laufzeit der Canvas-Welt: was ein Frame weiß, Dauer-Animationen (`LoopSpec` wie bei `Loop`) und einmalige
  * Bewegungen (Federn und Keyframes von Framer Motion, ausgewertet als reine Zeitfunktion – gleiche Kurven wie bisher).
  */
 
@@ -33,7 +33,7 @@ export interface Frame {
 type Prop = keyof LoopSpec['values']
 export type LoopValues = Partial<Record<Prop, number>>
 
-/** CSS-Schlüsselwörter, wie die SVG-Loops sie an Web Animations geben. */
+/** CSS-Schlüsselwörter, wie `Loop` sie an Web Animations gibt. */
 const CSS_EASE = {
   linear: (p: number) => p,
   easeIn: cubicBezier(0.42, 0, 1, 1),

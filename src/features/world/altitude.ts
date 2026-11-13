@@ -31,10 +31,7 @@ export const SKY_LAYERS = {
 
 export const MAX_RULER_LEVEL = 12
 
-/** Weltpixel (z) einer Block-Ebene – passend zu den Blockhöhen in IsoTower (Anker 68, sonst 50). */
-export const levelToZ = (level: number) => (level <= 0 ? 0 : 68 + (level - 1) * 50)
-
-/** Umkehrung von `levelToZ` (gebrochen): auf welcher Ebene liegt die Höhe z? */
+/** Auf welcher Block-Ebene (gebrochen) liegt die Höhe z? Anker 68 Weltpixel hoch, jeder weitere Block 50. */
 export const zToLevel = (z: number) => (z <= 0 ? 0 : z < 68 ? z / 68 : 1 + (z - 68) / 50)
 
 export function zoneForAlt(alt: number): AltitudeZone {

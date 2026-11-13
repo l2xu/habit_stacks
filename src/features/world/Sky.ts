@@ -1,11 +1,8 @@
-import { memo } from 'react'
-import { Loop, type LoopSpec } from '@/ui/Loop'
+import type { LoopSpec } from '@/ui/Loop'
 import { SKY_LAYERS, SKY_STOPS } from './altitude'
-import { BoxPaths } from './IsoBox'
-import { boxGeometry, project, toPoints } from './iso'
+import { boxGeometry, project } from './iso'
 import { horizonOf, perIsland, type Island } from './island'
 import { rectPath } from './paint'
-import { WORLD } from './palette'
 import { seededRandom } from './random'
 
 /** Wie weit Himmel, Wolken und Vögel links und rechts über die Insel hinausreichen (px). */
@@ -70,44 +67,6 @@ export const skyStars = perIsland((island) => {
 /** Mond: Scheibe, Rand und drei Krater (relativ zur Mondmitte). */
 export const MOON = { r: 30, fill: '#f1ecd8', rim: '#d6cfb4', crater: '#dcd5bb', craters: [{ x: -9, y: -7, r: 6 }, { x: 10, y: 8, r: 4 }, { x: 6, y: -14, r: 2.5 }] }
 
-/**
- * Hinterster Teil der Welt: Himmelsverlauf nach Höhe (Dunst am Horizont → Nachtblau), Sterne und Mond.
- * Liegt fest in Weltkoordinaten – Startseite und Fokus-Modus sehen denselben Himmel.
- */
-export const SkyBackdrop = memo(function SkyBackdrop({ island }: { island: Island }) {
-  const horizon = horizonOf(island)
-  const { stars, moon } = skyStars(island)
-  const fade = skyFade(island)
-
-  return (
-    <g pointerEvents="none" aria-hidden>
-      <defs>
-        <linearGradient id="sky-fade" gradientUnits="userSpaceOnUse" x1={0} y1={fade.y0} x2={0} y2={fade.y1}>
-          {fade.stops.map((s) => (
-            <stop key={s.offset} offset={s.offset} stopColor={s.color} />
-          ))}
-        </linearGradient>
-      </defs>
-      <rect x={-20000} y={-20000} width={40000} height={20000 + horizon + 1} fill="url(#sky-fade)" />
-      <g fill="#f5f1dc" shapeRendering="crispEdges">
-        {stars.map((s) => s.group === null && <path key={s.opacity} d={s.d} fillOpacity={s.opacity} />)}
-        {TWINKLE_DELAYS.map((delay, g) => (
-          <Loop key={`t${g}`} loop={twinkle(delay)}>
-            {stars.map((s) => s.group === g && <path key={s.opacity} d={s.d} fillOpacity={s.opacity} />)}
-          </Loop>
-        ))}
-      </g>
-      <g transform={`translate(${moon.x} ${moon.y})`}>
-        <circle r={MOON.r} fill={MOON.fill} />
-        <circle r={MOON.r} fill="none" stroke={MOON.rim} strokeWidth={3} />
-        {MOON.craters.map((c, i) => (
-          <circle key={i} cx={c.x} cy={c.y} r={c.r} fill={MOON.crater} />
-        ))}
-      </g>
-    </g>
-  )
-})
-
 /** Endlose Drift von links nach rechts über `span` px: Phase 0–1, eine Runde in `duration` s. */
 export const drift = (span: number, duration: number, phase: number): LoopSpec => ({
   values: { x: [0, span] },
@@ -152,38 +111,4 @@ export const skyLife = perIsland((island) => {
     birds: Array.from({ length: 2 + Math.floor(rand() * 3) }, (_, k) => ({ dx: -k * 15 - rand() * 6, dy: (k % 2 ? 1 : -1) * k * 5, flap: 0.5 + rand() * 0.25 })),
   }))
   return { left, width, clouds, flocks }
-})
-
-/**
- * Leben im Himmel: eine Wolkenschicht, die auf fester Höhe langsam von links nach rechts zieht,
- * und darunter Vogelschwärme. Liegt hinter Insel und Türmen.
- */
-export const SkyLife = memo(function SkyLife({ island }: { island: Island }) {
-  const { left, width, clouds, flocks } = skyLife(island)
-
-  return (
-    <g pointerEvents="none" aria-hidden>
-      {clouds.map((c, i) => (
-        <g key={`c${i}`} transform={`translate(${left} ${-c.alt})`} opacity={c.opacity}>
-          <Loop loop={drift(width, width / c.speed, c.phase)}>
-            <BoxPaths geos={c.parts} palette={WORLD.cloud} />
-          </Loop>
-        </g>
-      ))}
-      {flocks.map((f, i) => (
-        <g key={`f${i}`} transform={`translate(${left} ${-f.alt})`}>
-          <Loop loop={drift(width, width / f.speed, f.phase)}>
-            {f.birds.map((b, k) => (
-              <g key={k} transform={`translate(${b.dx} ${b.dy})`}>
-                {/* Flügelschlag: aus dem V wird kurz ein Λ */}
-                <Loop loop={flap(b.flap, k)} origin="50% 100%">
-                  <polyline points={toPoints(BIRD)} fill="none" stroke={WORLD.ink} strokeOpacity={0.75} strokeWidth={1.8} strokeLinejoin="round" />
-                </Loop>
-              </g>
-            ))}
-          </Loop>
-        </g>
-      ))}
-    </g>
-  )
 })

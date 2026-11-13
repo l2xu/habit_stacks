@@ -171,11 +171,6 @@
     opacity: 0.45;
   }
 
-  .tower-hit:focus-visible .tower-ring {
-    opacity: 1;
-    stroke: var(--color-focus);
-  }
-
   .no-scrollbar {
     scrollbar-width: none;
   }

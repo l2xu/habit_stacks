@@ -97,7 +97,7 @@ describe('Pfade zusammenfassen', () => {
   })
 })
 
-describe('Bild und SVG trennen', () => {
+describe('Stilles Bild und Bewegtes trennen', () => {
   const still = (poly = rect(0, 0, 10, 10)) => ({ moving: false, polys: [poly] })
   const moving = (poly = rect(0, 0, 10, 10)) => ({ moving: true, polys: [poly] })
 

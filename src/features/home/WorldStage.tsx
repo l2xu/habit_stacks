@@ -2,7 +2,6 @@ import { useSpring } from 'framer-motion'
 import { useCallback, useEffect, useMemo, useRef, type MouseEvent, type PointerEvent } from 'react'
 import type { ID, TowerVM } from '@/domain/types'
 import { clamp, fitFrame, MAX_ZOOM, rubberBand, type CameraFit, type Stage } from '@/features/world/camera'
-import { useCameraMoving } from '@/features/world/cameraMoving'
 import { WorldCanvas, type WorldCanvasHandle, type WorldHit } from '@/features/world/canvas/WorldCanvas'
 import { useLongPress } from '@/hooks/useLongPress'
 import { effectHeadroom, type TowerEffect } from '@/features/world/effects'
@@ -122,7 +121,6 @@ export function WorldStage({ towers, openId, homeId, insets, effect, onOpen, onE
   const cx = useSpring(0, CAMERA_POS)
   const cy = useSpring(0, CAMERA_POS)
   const cs = useSpring(1, CAMERA)
-  useCameraMoving(cx, cy, cs)
   const placedCamera = useRef(false)
   /** Übersicht: vom Nutzer verschobene Kamera; null = auf den zuletzt geöffneten Turm. */
   const pan = useRef<number | null>(null)

@@ -1,7 +1,6 @@
 import type { MotionValue } from 'framer-motion'
 import { memo, useMemo } from 'react'
 import type { FocusSession, TowerVM } from '@/domain/types'
-import { useCameraMoving } from '@/features/world/cameraMoving'
 import { WorldCanvas } from '@/features/world/canvas/WorldCanvas'
 import { placeTowers } from '@/features/world/worldLayout'
 
@@ -28,7 +27,6 @@ interface FocusSceneProps {
 export const FocusScene = memo(function FocusScene({ towers, session, charge, width, height, anchorY, cameraZ, zoom }: FocusSceneProps) {
   const placed = useMemo(() => placeTowers(towers), [towers])
   const me = placed.find((p) => p.tower.id === session.towerId)
-  useCameraMoving(cameraZ, zoom)
   const focus = useMemo(() => ({ session, charge }), [session, charge])
 
   if (!me) return null
