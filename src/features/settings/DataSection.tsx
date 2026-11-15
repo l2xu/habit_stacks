@@ -2,8 +2,7 @@ import { useRef, useState } from 'react'
 import { currentDay } from '@/domain/dates'
 import { createEmptyState, pickDomain } from '@/domain/state'
 import type { DomainState } from '@/domain/types'
-import { useToday } from '@/hooks/useToday'
-import { downloadBackup, readBackupFile } from '@/store/backup'
+import { saveBackup, readBackupFile } from '@/store/backup'
 import { useAppStore } from '@/store/useAppStore'
 import { ConfirmButton } from '@/ui/ConfirmButton'
 import { Section, SettingRow } from '@/ui/controls'
@@ -13,12 +12,26 @@ const TIME = new Intl.DateTimeFormat('de-DE', { hour: '2-digit', minute: '2-digi
 
 /** "Daten & Backup": Export, Import, Löschen. Die Zeitreise steckt in den DevTools (features/dev). */
 export function DataSection({ onClose }: { onClose: () => void }) {
-  const today = useToday()
   const storage = useAppStore((s) => s.ui.storage)
   const replaceDomain = useAppStore((s) => s.replaceDomain)
   const showToast = useAppStore((s) => s.showToast)
   const fileRef = useRef<HTMLInputElement>(null)
   const [pendingImport, setPendingImport] = useState<DomainState | null>(null)
+  const [saving, setSaving] = useState(false)
+
+  const save = async () => {
+    setSaving(true)
+    try {
+      const result = await saveBackup(pickDomain(useAppStore.getState()))
+      if (result === 'saved') showToast('Backup gespeichert.')
+      if (result === 'shared') showToast('Backup an die gewählte App übergeben.')
+      if (result === 'downloaded') showToast('Backup-Download gestartet.')
+    } catch {
+      showToast('Backup konnte nicht exportiert werden. Bitte erneut versuchen.')
+    } finally {
+      setSaving(false)
+    }
+  }
 
   const replace = (domain: DomainState, message: string) => {
     replaceDomain(domain, currentDay(domain.settings.dayStartsAtHour, domain.settings.devDayOffset))
@@ -43,9 +56,9 @@ export function DataSection({ onClose }: { onClose: () => void }) {
         </p>
         {storage.error && <p className="mt-1 text-[14px] font-semibold text-brick">{storage.error}</p>}
       </div>
-      <SettingRow label="Backup exportieren" hint="Speichert alle Türme und Logs als JSON-Datei.">
-        <PixelButton onClick={() => downloadBackup(pickDomain(useAppStore.getState()), today)} className="h-10 w-28 shrink-0 text-[15px] font-semibold">
-          Export
+      <SettingRow label="Backup exportieren" hint="Wähle im Speichern- oder Teilen-Dialog einen Ort für deine JSON-Datei. Falls nicht unterstützt, startet ein Download.">
+        <PixelButton disabled={saving} onClick={() => void save()} className="h-10 w-28 shrink-0 text-[15px] font-semibold">
+          {saving ? 'Bitte warten' : 'Export'}
         </PixelButton>
       </SettingRow>
       <SettingRow label="Backup importieren" hint={pendingImport ? 'Ersetzt alle aktuellen Daten.' : 'Lädt eine zuvor exportierte Datei.'}>
