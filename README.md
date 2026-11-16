@@ -76,7 +76,7 @@ App [selbst hosten](#selbst-hosten).
 
 ### Sonstiges
 - **8-Bit-Töne** und synthetische **Naturgeräusche** (Wind, Brandung, Vögel, Grillen), beides abschaltbar.
-- **Backup** als JSON exportieren und importieren.
+- **Backup** als JSON exportieren und importieren. Beim Export öffnet sich je nach Gerät ein Speichern- oder Teilen-Dialog oder ein Download startet.
 - Respektiert „Bewegung reduzieren“, Tastaturbedienung und Screenreader-Texte.
 - Jeder startet mit einer **leeren Insel** und baut seinen ersten Turm selbst.
 
