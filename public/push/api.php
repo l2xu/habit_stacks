@@ -48,8 +48,25 @@ try {
             $items = push_valid_items($in['items'] ?? null) ?? reply(400, ['error' => 'Ungültiger Plan']);
             $stamp = is_int($in['stamp'] ?? null) ? $in['stamp'] : 0;
             $file = push_device_file($sub['endpoint']);
-            if (!is_file($file) && count(push_device_files()) >= PUSH_MAX_DEVICES) {
+            $isNew = !is_file($file);
+            if ($isNew && count(push_device_files()) >= PUSH_MAX_DEVICES) {
                 reply(429, ['error' => 'Zu viele Geräte']);
+            }
+            if ($isNew) {
+                try {
+                    $verify = push_send($sub, [
+                        'title' => 'Habit Stacks',
+                        'body' => 'Benachrichtigungen sind aktiv.',
+                        'tag' => 'welcome',
+                    ], push_vapid(), push_origin(), 60);
+                } catch (Throwable $e) {
+                    // Schlüssel lässt sich nicht verschlüsseln -> kein echtes Abo.
+                    reply(400, ['error' => 'Abo ließ sich nicht bestätigen']);
+                }
+                // Nur bei beweisbar schlechtem Abo ablehnen (4xx vom Push-Dienst). 2xx ok; Netzfehler/5xx nicht dem Nutzer anlasten.
+                if ($verify >= 400 && $verify < 500) {
+                    reply(400, ['error' => 'Abo ließ sich nicht bestätigen']);
+                }
             }
             push_with_file($file, fn (?array $device) => $device && ($device['stamp'] ?? 0) > $stamp ? $device : [
                 'subscription' => $sub,
