@@ -147,6 +147,8 @@ export interface RulesConfig {
   maxFormingPerTower: number
   /** Gedächtnis-Bonus: Würfel, mit denen ein früher verfestigter Block beim Neu-Stapeln startet. */
   restackHeadStart: number
+  /** So viele vergangene Tage (bis gestern) lassen sich nachträglich abhaken oder korrigieren (`domain/retro.ts`). */
+  editableDays: number
 }
 
 // ───────────────────────────── Logs ─────────────────────────────
@@ -160,7 +162,8 @@ export interface HabitLog {
   completedAt: ISODateTime
   /** Timer-Habits: tatsächlich gelaufene Sekunden (höchstens die Zieldauer). */
   durationSec?: number
-  source: 'focus' | 'quick'
+  /** retro: nachträglich im Streak-Verlauf eingetragen (`completedAt` = Zeitpunkt des Nachtragens). */
+  source: 'focus' | 'quick' | 'retro'
   sessionId?: ID
 }
 
@@ -295,9 +298,9 @@ export interface BackupFile {
 // ───────────────────────────── View-Modelle (abgeleitet, nie gespeichert) ─────────────────────────────
 
 /**
- * Tagesmarke für die Wochenleiste (älteste zuerst, zuletzt heute).
+ * Tagesmarke im Streak-Verlauf (Kalender im Streak-Overlay). Zählt die Blöcke, die an dem Tag auf dem Turm standen.
  * - done:    alle Blöcke erledigt (volles Kästchen)
- * - partial: nur ein Teil erledigt (halbes Kästchen)
+ * - partial: nur ein Teil erledigt (halbes Kästchen) – zählt für den Streak
  * - missed:  nichts erledigt (leeres Kästchen)
  * - pending: heute, noch offen (gestricheltes Kästchen)
  * - paused:  Turm war pausiert (Schloss)
@@ -351,8 +354,6 @@ export interface TowerVM {
   blocks: BlockVM[]
   /** Schutthaufen: gebrochene, abgefallene und abgebaute Blöcke, neuester zuerst. */
   lost: LostBlockVM[]
-  /** Letzte 7 Tage, älteste zuerst (zuletzt heute). */
-  week: { date: ISODate; mark: DayMark }[]
   /**
    * Aktive Tage am Stück: mindestens ein Block erledigt (heute zählt, sobald einer erledigt ist). Pausierte Tage
    * zählen nicht mit und unterbrechen ihn nicht. Nur Anzeige.

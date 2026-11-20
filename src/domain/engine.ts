@@ -40,6 +40,31 @@ export function evaluateAll(state: DomainState, today: ISODate, nowMs = Date.now
 }
 
 /**
+ * Wertet einen einzelnen Turm für die Tage `from` … `through` aus – fürs Nachtragen (`domain/retro.ts`), nachdem
+ * der Turm auf den Stand vor `from` zurückgerechnet wurde. `lastEvaluatedOn` bleibt unverändert.
+ * Gibt den neuen Zustand und die dabei entstandenen Ereignisse zurück (noch nicht in `events` eingetragen).
+ */
+export function evaluateTowerRange(
+  state: DomainState,
+  towerId: ID,
+  from: ISODate,
+  through: ISODate,
+  nowMs = Date.now(),
+): { state: DomainState; events: TowerEvent[] } {
+  const ctx: Ctx = {
+    towers: { ...state.towers },
+    habits: { ...state.habits },
+    events: [],
+    rules: state.rules,
+    dayStartsAtHour: state.settings.dayStartsAtHour,
+    now: new Date(nowMs).toISOString(),
+    isDone: (habitId, date) => `${habitId}|${date}` in state.logs,
+  }
+  for (let d = from; d <= through; d = addDays(d, 1)) evaluateTowerDay(ctx, towerId, d)
+  return { state: { ...state, towers: ctx.towers, habits: ctx.habits }, events: ctx.events }
+}
+
+/**
  * Der letzte fehlende Tag macht den Geist sofort fest – noch am selben Tag, nicht erst am nächsten Morgen.
  * Aufruf direkt nach dem Häkchen (Log für `date` liegt schon vor). Schreibt `block_solidified` als Neuigkeit;
  * die Engine wertet den Block am nächsten Morgen dann als festen Block aus (an `date` erledigt).
@@ -118,8 +143,12 @@ function evaluateTowerDay(ctx: Ctx, towerId: ID, d: ISODate) {
   if (!tower || isPausedOn(tower, d) || dateOf(tower.createdAt, ctx.dayStartsAtHour) > d) return
   // Zuerst die Blöcke, die zu Tagesbeginn schon fest waren – ein heute verfestigter Geist zählt noch nicht.
   const fallen = evaluateSolids(ctx, towerId, d)
-  const forming = ctx.towers[towerId]!.blockIds.map((id) => ctx.habits[id]).find((h) => h?.lifecycle === 'forming')
-  if (forming) evaluateFormation(ctx, towerId, forming, d)
+  // Normalerweise höchstens ein Geist (`maxFormingPerTower`); nach dem Nachtragen können es kurz zwei sein.
+  const forming = ctx.towers[towerId]!.blockIds.flatMap((id) => {
+    const h = ctx.habits[id]
+    return h?.lifecycle === 'forming' ? [h] : []
+  })
+  for (const h of forming) evaluateFormation(ctx, towerId, h, d)
   if (fallen.length > 0) reportFalls(ctx, towerId, fallen, d)
 }
 

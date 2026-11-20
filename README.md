@@ -50,8 +50,8 @@ App [selbst hosten](#selbst-hosten).
 - **Isometrische Voxel-Welt** mit Meer, Teich, Bach und Wasserfall, Bäumen, Blumen, Schmetterlingen und einem Frosch.
 - **Jede Routine ist ein Turm.** Jeder Block besteht aus 27 Mini-Würfeln (3 × 3 × 3), ein Würfel pro erledigtem Tag.
 - **Himmelsschichten:** Hohe Türme wachsen an Vögeln vorbei durch die Wolken bis zu den Sternen.
-- **Zwei Ansichten:** Übersicht über alle Türme und Detailansicht für einen Turm mit Streak, Wochenleiste,
-  Höhenlineal und dem nächsten offenen Block.
+- **Zwei Ansichten:** Übersicht über alle Türme und Detailansicht für einen Turm mit Höhenlineal, einer Warnung, wenn
+  etwas bröckelt oder wackelt, und unten einer Leiste mit Streak und Start-Knopf.
 - **Sichtbarer Zustand:** Neue Blöcke („Geister“) sind halb durchsichtig und füllen sich Würfel für Würfel. Gefährdete
   Blöcke wackeln oder bröckeln, verlorene Blöcke landen auf einem Schutthaufen neben dem Turm.
 
@@ -60,6 +60,14 @@ App [selbst hosten](#selbst-hosten).
 - Die Kamera fährt am Turm hoch, der aktive Block leuchtet, erledigte Blöcke rasten ein.
 - Der Timer läuft im Hintergrund und nach einem Neuladen weiter.
 - Zum Schluss eine Zusammenfassung mit Kette, übersprungenen Blöcken und Streak.
+
+### Streak & Nachtragen
+- Antippen des Streaks öffnet den **ganzen Verlauf** als Monatskalender (alles, teilweise, verpasst, Pause) mit Rekord.
+- Ein Tag zeigt, welche Blöcke erledigt waren. Unter **„Tage nachtragen“** lassen sich die letzten 7 Tage einzeln
+  abhaken oder korrigieren.
+- Der Turm wird dabei **sofort neu berechnet**, als wäre der Tag damals so abgehakt worden: Bröckeln verschwindet,
+  abgefallene oder weggebrochene Blöcke kehren an ihren Platz zurück. Umgekehrt kann ein entferntes Häkchen einen Block
+  nachträglich fallen lassen.
 
 ### Neuigkeiten
 - Beim Öffnen zeigt die App, was seit dem letzten Mal passiert ist (Block verfestigt, bröckelt, abgefallen, Turm
@@ -95,6 +103,7 @@ App [selbst hosten](#selbst-hosten).
 | Pausierter Turm | Es passiert **nichts**, bis du ihn fortsetzt |
 | Gedächtnis-Bonus beim Neu-Stapeln | **18 von 28 Tagen** (für Blöcke, die schon einmal fest waren) |
 | Neuer Tag beginnt um | **4:00 Uhr** (einstellbar 0–6 Uhr) |
+| Nachtragen | die letzten **7 Tage** bis gestern, der Turm wird neu berechnet |
 
 **Merksatz:** Jeder Block zählt für sich. Ein Geist bricht nach 2 Tagen ohne Häkchen, ein fester Block fällt nach 4.
 
@@ -103,7 +112,10 @@ App [selbst hosten](#selbst-hosten).
   zwei in Folge lassen ihn wegbrechen.
 - **Fester Block:** Er braucht kein tägliches Häkchen, aber nach 2 Tagen ohne bröckelt er und nach 4 fällt er ab.
   Einmal erledigen genügt, dann steht er wieder sicher.
-- **Heute ist immer offen.** Ausgewertet wird erst am nächsten Morgen. Vergangene Tage lassen sich nicht nachtragen.
+- **Heute ist immer offen.** Ausgewertet wird erst am nächsten Morgen.
+- **Nachtragen:** Vergessene Häkchen der letzten 7 Tage lassen sich im Streak-Verlauf nachholen (oder falsche
+  entfernen). Der Turm rechnet ab diesem Tag neu. Blöcke, die du seitdem abgebaut oder neu gestapelt hast, bleiben,
+  wie sie sind.
 - **Pausieren** (z. B. im Urlaub): Der Turm bekommt ein Schloss, nichts geht verloren, der Streak läuft weiter.
 - **Schutthaufen:** Verlorene Blöcke lassen sich als Geist neu stapeln. Ihre Historie bleibt erhalten.
 - **Streak:** aktive Tage am Stück mit mindestens einem erledigten Block. Reine Anzeige, pausierte Tage werden

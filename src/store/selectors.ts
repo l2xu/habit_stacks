@@ -1,8 +1,9 @@
 import { useMemo } from 'react'
 import { useShallow } from 'zustand/react/shallow'
-import { addDays, dateOf, lastNDays } from '@/domain/dates'
+import { addDays, dateOf } from '@/domain/dates'
 import { restackHeadStart } from '@/domain/editor'
 import { isPausedOn } from '@/domain/engine'
+import { blocksOnDay } from '@/domain/retro'
 import type { BlockVM, DayMark, DomainState, Habit, ID, ISODate, LostBlockVM, Tower, TowerVM } from '@/domain/types'
 import { useAppStore } from './useAppStore'
 
@@ -18,27 +19,7 @@ export function buildTowerVM(s: WorldSlice, tower: Tower, today: ISODate): Tower
   const habits = tower.blockIds.flatMap((id) => s.habits[id] ?? [])
   const isDone = (habitId: string, date: ISODate) => `${habitId}|${date}` in s.logs
   const towerEvents = s.events.filter((e) => e.towerId === tower.id)
-  const hour = s.settings.dayStartsAtHour
-  const paused = (date: ISODate) => isPausedOn(tower, date)
-  // Ein gestapelter Block zählt ab dem Stapeltag (auch nach dem Neu-Stapeln aus dem Schutthaufen).
-  const since = (h: Habit) => h.formation?.startedOn ?? dateOf(h.createdAt, hour)
-
-  const markFor = (date: ISODate): DayMark => {
-    if (date < dateOf(tower.createdAt, hour)) return 'none'
-    if (paused(date)) return 'paused'
-    const active = habits.filter((h) => since(h) <= date)
-    const done = active.filter((h) => isDone(h.id, date)).length
-    if (active.length > 0 && done === active.length) return 'done'
-    if (date === today) return 'pending'
-    return done > 0 ? 'partial' : 'missed'
-  }
-
-  // Aktive Tage: mindestens ein Block erledigt – auch von Blöcken, die inzwischen im Schutthaufen liegen.
-  // Pausierte Tage zählen nicht mit und unterbrechen den Streak nicht.
-  const activeOn = new Set<ISODate>()
-  for (const l of Object.values(s.logs)) if (l.towerId === tower.id) activeOn.add(l.date)
-  let streak = activeOn.has(today) && !paused(today) ? 1 : 0
-  for (let d = addDays(today, -1); paused(d) || activeOn.has(d); d = addDays(d, -1)) if (!paused(d)) streak++
+  const streak = currentStreak(activeDays(s, tower.id), (d) => isPausedOn(tower, d), today)
 
   const { formationDays, skip } = s.rules
   const blocks = habits.map((h, level): BlockVM => {
@@ -79,7 +60,6 @@ export function buildTowerVM(s: WorldSlice, tower: Tower, today: ISODate): Tower
     name: tower.name,
     blocks,
     lost: buildLost(s, tower, towerEvents),
-    week: lastNDays(today, 7).map((date) => ({ date, mark: markFor(date) })),
     streak,
     nextBlock: next && nextHabit ? { ...next, action: nextHabit.action } : null,
     pausedSince,
@@ -88,6 +68,66 @@ export function buildTowerVM(s: WorldSlice, tower: Tower, today: ISODate): Tower
     atRisk: !pausedSince && (crumbling.length > 0 || blocks.some((b) => b.wobbling)),
     stackable: !pausedSince && blocks.filter((b) => b.visual === 'forming').length < s.rules.maxFormingPerTower,
   }
+}
+
+/** Aktive Tage eines Turms: mindestens ein Block erledigt – auch von Blöcken, die inzwischen im Schutthaufen liegen. */
+function activeDays(s: Pick<DomainState, 'logs'>, towerId: ID): Set<ISODate> {
+  const days = new Set<ISODate>()
+  for (const l of Object.values(s.logs)) if (l.towerId === towerId) days.add(l.date)
+  return days
+}
+
+/** Aktive Tage am Stück bis heute; heute zählt, sobald etwas erledigt ist. Pausierte Tage zählen nicht und unterbrechen nicht. */
+function currentStreak(active: ReadonlySet<ISODate>, paused: (d: ISODate) => boolean, today: ISODate): number {
+  let streak = active.has(today) && !paused(today) ? 1 : 0
+  for (let d = addDays(today, -1); paused(d) || active.has(d); d = addDays(d, -1)) if (!paused(d)) streak++
+  return streak
+}
+
+/** Verlauf eines Turms fürs Streak-Overlay. */
+export interface TowerHistory {
+  /** Bautag – davor gibt es nichts zu zeigen. */
+  created: ISODate
+  markOn: (date: ISODate) => DayMark
+  /** Blöcke, die an dem Tag auf dem Turm standen, von unten nach oben (`blocksOnDay`). */
+  blocksOn: (date: ISODate) => Habit[]
+  isDone: (habitId: ID, date: ISODate) => boolean
+  /** Längster Streak seit dem Bau. */
+  best: number
+  /** Tage mit mindestens einem Häkchen. */
+  activeTotal: number
+}
+
+export function buildTowerHistory(s: WorldSlice, tower: Tower, today: ISODate): TowerHistory {
+  const created = dateOf(tower.createdAt, s.settings.dayStartsAtHour)
+  const active = activeDays(s, tower.id)
+  const paused = (d: ISODate) => isPausedOn(tower, d)
+  const blocksOn = blocksOnDay(s, tower.id)
+  const isDone = (habitId: ID, date: ISODate) => `${habitId}|${date}` in s.logs
+
+  let run = 0
+  let best = 0
+  let activeTotal = 0
+  for (let d = created; d <= today; d = addDays(d, 1)) {
+    if (paused(d)) continue
+    if (active.has(d)) {
+      run++
+      activeTotal++
+      best = Math.max(best, run)
+    } else if (d < today) run = 0
+  }
+
+  const markOn = (date: ISODate): DayMark => {
+    if (date < created || date > today) return 'none'
+    if (paused(date)) return 'paused'
+    const blocks = blocksOn(date)
+    if (blocks.length > 0 && blocks.every((h) => isDone(h.id, date))) return 'done'
+    if (date === today) return 'pending'
+    // Teilweise = aktiver Tag, zählt also für den Streak – auch wenn nur ein inzwischen abgebauter Block erledigt war.
+    return active.has(date) ? 'partial' : 'missed'
+  }
+
+  return { created, markOn, blocksOn, isDone, best, activeTotal }
 }
 
 const LOSS_EVENTS = new Set(['block_broken', 'block_fallen', 'block_removed'])
@@ -171,6 +211,15 @@ export function useTowerVMs(today: ISODate): TowerVM[] {
       }),
     [slice, today],
   )
+}
+
+/** Verlauf eines Turms fürs Streak-Overlay (null, sobald er gelöscht ist). */
+export function useTowerHistory(towerId: ID, today: ISODate): TowerHistory | null {
+  const slice = useWorldSlice()
+  return useMemo(() => {
+    const tower = slice.towers[towerId]
+    return tower ? buildTowerHistory(slice, tower, today) : null
+  }, [slice, towerId, today])
 }
 
 /** Ein einzelner Turm (null, sobald er gelöscht ist). */

@@ -12,6 +12,7 @@ import {
   updateActiveTimer,
 } from '@/domain/focus'
 import { newId } from '@/domain/id'
+import { setPastDone, towerChanges, type TowerChange } from '@/domain/retro'
 import { createEmptyState, pickDomain } from '@/domain/state'
 import type { AppSettings, DomainState, FocusSession, ID, ISODate, TowerEvent, TowerNotify } from '@/domain/types'
 
@@ -39,6 +40,11 @@ export interface AppActions {
   /** Wertet alle abgeschlossenen Tage bis gestern aus (beim Start und bei jedem Tageswechsel). */
   evaluate: (today: ISODate) => void
   markEventsSeen: (ids: ID[]) => void
+  /**
+   * Hakt Blöcke an einem vergangenen Tag nachträglich ab oder entfernt das Häkchen; der Turm wird neu berechnet
+   * (domain/retro.ts). Rückgabe: was sich am Turm geändert hat, null = nichts geändert.
+   */
+  setPastDone: (towerId: ID, date: ISODate, changes: Record<ID, boolean>, today: ISODate) => TowerChange | null
   updateSettings: (patch: Partial<AppSettings>) => void
   setStorageInfo: (info: Partial<UiState['storage']>) => void
 
@@ -135,6 +141,11 @@ export const useAppStore = create<AppStore>()((set, get) => {
         const wanted = new Set(ids)
         return { events: s.events.map((e) => (wanted.has(e.id) && !e.seenAt ? { ...e, seenAt: now } : e)) }
       }),
+
+    setPastDone: (towerId, date, changes, today) => {
+      const before = pickDomain(get())
+      return apply((d) => setPastDone(d, towerId, date, changes, today, Date.now())) ? towerChanges(before, get(), towerId) : null
+    },
 
     updateSettings: (patch) => set((s) => ({ settings: { ...s.settings, ...patch } })),
     setStorageInfo: (info) => set((s) => ({ ui: { ...s.ui, storage: { ...s.ui.storage, ...info } } })),

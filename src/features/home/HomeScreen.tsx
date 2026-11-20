@@ -7,6 +7,7 @@ import { EditorPanel } from '@/features/editor/EditorPanel'
 import { NewsPanel } from '@/features/news/NewsPanel'
 import { useNews } from '@/features/news/useNews'
 import { SettingsPanel } from '@/features/settings/SettingsPanel'
+import { StreakSheet } from '@/features/streak/StreakSheet'
 import { baseAltOf, dropEnd } from '@/features/world/worldLayout'
 import { useSafeArea } from '@/hooks/useSafeArea'
 import { useToday } from '@/hooks/useToday'
@@ -18,28 +19,24 @@ import { PixelButton } from '@/ui/PixelButton'
 import { Sheet } from '@/ui/Sheet'
 import { FocusDock } from './FocusDock'
 import { HeightRuler } from './HeightRuler'
-import { StreakPanel } from './StreakPanel'
+import { RiskBanner, riskHeight } from './RiskBanner'
 import { TOP_BAR_H, TopBar } from './TopBar'
 import { WorldStage } from './WorldStage'
 
-/** Höhe von Streak und Wochenleiste unter der Kopfzeile (Detailansicht). */
-const STREAK_H = 74
-/** Countdown-Zeile unter der Warnung, solange Blöcke bröckeln. */
-const FALL_LINE_H = 18
-/** Bis knapp über die Dock-Oberkante darf der Turm reichen. */
-const DOCK_INSET = 118
+/** Bis knapp über die Oberkante der Leiste unten (Streak + Start) darf der Turm reichen. */
+const DOCK_INSET = 90
 /** Solange eine Neuigkeit offen ist, rückt der Turm über das Panel, damit die Animation sichtbar bleibt. */
 const NEWS_SPACE = 150
 /** Übersicht: Platz für den Bedienhinweis am unteren Rand. */
 const HINT_INSET = 44
 
-/** Was im Bottom-Sheet liegt: Editor-Ansicht, Einstellungen oder DevTools (vorübergehend). */
-type SheetRoute = EditorRoute | { kind: 'settings' } | { kind: 'dev'; towerId: ID | null }
+/** Was im Bottom-Sheet liegt: Editor-Ansicht, Streak-Verlauf, Einstellungen oder DevTools (vorübergehend). */
+type SheetRoute = EditorRoute | { kind: 'streak'; towerId: ID } | { kind: 'settings' } | { kind: 'dev'; towerId: ID | null }
 
 /**
  * Zwei Ansichten derselben Insel: Übersicht (alle Türme mit Name und Höhe) und Detailansicht
- * (Kamera auf einem Turm, dazu Wochenleiste, Lineal und Fokus-Dock). Antippen öffnet einen Turm,
- * gedrückt halten öffnet den Editor.
+ * (Kamera auf einem Turm, dazu Warnung bei Gefahr, Lineal und unten die Leiste mit Streak und Start).
+ * Antippen öffnet einen Turm, gedrückt halten öffnet den Editor. Der Streak öffnet den Verlauf zum Nachtragen.
  */
 export function HomeScreen({ introDone }: { introDone: boolean }) {
   const today = useToday()
@@ -142,13 +139,13 @@ export function HomeScreen({ introDone }: { introDone: boolean }) {
   const isOpen = open !== null
   const hasNews = current !== null
   const safe = useSafeArea()
-  const streakH = STREAK_H + (open && open.fallIn !== null ? FALL_LINE_H : 0)
+  const riskH = riskHeight(open)
   const insets = useMemo(
     () => ({
-      top: safe.top + TOP_BAR_H + (isOpen ? streakH : 0) + 6,
+      top: safe.top + TOP_BAR_H + riskH + 6,
       bottom: safe.bottom + (isOpen ? DOCK_INSET + (hasNews ? NEWS_SPACE : 0) : HINT_INSET),
     }),
-    [isOpen, streakH, hasNews, safe],
+    [isOpen, riskH, hasNews, safe],
   )
   const addTower = () => openSheet({ kind: 'new-tower' })
 
@@ -192,9 +189,9 @@ export function HomeScreen({ introDone }: { introDone: boolean }) {
             onAdd={addTower}
           />
           <AnimatePresence>
-            {open && (
-              <motion.div key="streak" initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.25 }}>
-                <StreakPanel tower={open} />
+            {open && riskH > 0 && (
+              <motion.div key="risk" initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.25 }}>
+                <RiskBanner tower={open} />
               </motion.div>
             )}
           </AnimatePresence>
@@ -207,7 +204,7 @@ export function HomeScreen({ introDone }: { introDone: boolean }) {
                 level={open.blocks.length}
                 baseAlt={baseAltOf(towers.indexOf(open))}
                 className="right-2 bottom-[calc(var(--dock-h)+4px)]"
-                style={{ top: safe.top + TOP_BAR_H + streakH + 8 }}
+                style={{ top: safe.top + TOP_BAR_H + riskH + 8 }}
               />
             </motion.div>
           )}
@@ -242,6 +239,7 @@ export function HomeScreen({ introDone }: { introDone: boolean }) {
               <FocusDock
                 tower={open}
                 onStart={() => startFocus(open.id, today)}
+                onStreak={() => openSheet({ kind: 'streak', towerId: open.id })}
                 onResume={() => {
                   resumeTower(open.id, today)
                   showToast(`${open.name} läuft wieder – ab heute zählt jeder Tag.`)
@@ -269,7 +267,9 @@ export function HomeScreen({ introDone }: { introDone: boolean }) {
       </main>
 
       <Sheet open={sheet !== null} onClose={closeSheet} labelledBy={SHEET_TITLE_ID} contentKey={sheet ? JSON.stringify(sheet) : undefined}>
-        {sheet?.kind === 'settings' ? (
+        {sheet?.kind === 'streak' ? (
+          <StreakSheet towerId={sheet.towerId} onClose={closeSheet} />
+        ) : sheet?.kind === 'settings' ? (
           <SettingsPanel onClose={closeSheet} onDev={() => openSheet({ kind: 'dev', towerId: null })} />
         ) : sheet?.kind === 'dev' ? (
           <DevPanel towerId={sheet.towerId} onClose={closeSheet} />

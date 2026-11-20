@@ -19,8 +19,8 @@
     /* Notch und Home-Indikator: Die Welt läuft darunter weiter, Bedienelemente halten Abstand. */
     --safe-top: env(safe-area-inset-top, 0px);
     --safe-bottom: env(safe-area-inset-bottom, 0px);
-    /* Höhe des Fokus-Docks (inkl. Home-Indikator); Welt, Lineal und Toast richten sich danach aus */
-    --dock-h: calc(136px + var(--safe-bottom));
+    /* Höhe der Leiste unten (Streak + Start, inkl. Home-Indikator); Welt, Lineal und Toast richten sich danach aus */
+    --dock-h: calc(84px + var(--safe-bottom));
   }
 
   html,

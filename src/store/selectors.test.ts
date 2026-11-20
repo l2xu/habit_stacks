@@ -5,7 +5,7 @@ import { pauseTower } from '@/domain/editor'
 import { evaluateAll } from '@/domain/engine'
 import { setDone, setSkips } from '@/features/dev/devTools'
 import { layoutTower } from '@/features/world/towerLayout'
-import { buildTowerVM, reuseUnchanged } from './selectors'
+import { buildTowerHistory, buildTowerVM, reuseUnchanged } from './selectors'
 
 const D0 = '2026-03-02'
 
@@ -65,14 +65,14 @@ describe('Bröckeln & Pause im View-Modell', () => {
     expect(vm.blocks.find((b) => b.id === 'hb-dehnen')).toMatchObject({ visual: 'crumbling', skips: 3, crumbleProgress: 1, fallIn: 1 })
   })
 
-  it('pausiert: nichts in Gefahr, kein Abhaken, Woche zeigt die Pause', () => {
+  it('pausiert: nichts in Gefahr, kein Abhaken, der Verlauf zeigt die Pause', () => {
     const s = pauseTower(createFixtureWorld(D0), 'tw-abend', D0)
     const vm = abend(s)
     expect(vm).toMatchObject({ pausedSince: D0, atRisk: false, collapsing: false, fallIn: null, nextBlock: null, stackable: false })
-    expect(vm.week.at(-1)).toEqual({ date: D0, mark: 'paused' })
+    expect(buildTowerHistory(s, s.towers['tw-abend']!, D0).markOn(D0)).toBe('paused')
   })
 
-  it('überspringt pausierte Tage im Streak und in der Wochenleiste', () => {
+  it('überspringt pausierte Tage im Streak und im Verlauf', () => {
     // Demo: „Laptop zuklappen“ (Anker im Feierabend) ist 20 Tage am Stück erledigt, bis gestern.
     const demo = createFixtureWorld(D0)
     const before = buildTowerVM(demo, demo.towers['tw-feierabend']!, D0)
@@ -80,7 +80,12 @@ describe('Bröckeln & Pause im View-Modell', () => {
     const vm = buildTowerVM(s, s.towers['tw-feierabend']!, D0)
 
     expect(vm.streak).toBe(before.streak - 3)
-    expect(vm.week.map((d) => d.mark).slice(1, 4)).toEqual(['paused', 'paused', 'paused'])
+    const history = buildTowerHistory(s, s.towers['tw-feierabend']!, D0)
+    expect([-6, -5, -4, -3, -2].map((n) => history.markOn(addDays(D0, n)))).toEqual(['done', 'paused', 'paused', 'paused', 'done'])
+    expect(history.best).toBeGreaterThanOrEqual(vm.streak)
+    // Gestern nur der Anker, „Lesen“ verpasst: teilweise – zählt trotzdem für den Streak.
+    expect(history.markOn(addDays(D0, -1))).toBe('partial')
+    expect(history.markOn(D0)).toBe('pending')
   })
 
   it('zeigt eingestürzte Blöcke im Schutthaufen als eingestürzt', () => {

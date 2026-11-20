@@ -9,6 +9,8 @@ export const DEFAULT_RULES: RulesConfig = {
   skip: { crumbleAfter: 2, fallAfter: 4 },
   maxFormingPerTower: 1,
   restackHeadStart: 18,
+  // Vergessene Häkchen der letzten 7 Tage lassen sich nachtragen – genug, bevor ein fester Block abfällt (4 Tage).
+  editableDays: 7,
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
