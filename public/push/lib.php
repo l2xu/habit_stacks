@@ -15,7 +15,8 @@
 
 declare(strict_types=1);
 
-const PUSH_MAX_DEVICES = 50;
+/** Höchstzahl gespeicherter Geräte. Es zählen nur Geräte mit geplanten Nachrichten – ein leerer Plan belegt keinen Platz. */
+const PUSH_MAX_DEVICES = 500;
 const PUSH_MAX_ITEMS = 500;
 /** Verpasste Nachrichten (Cron lief nicht) werden höchstens so spät noch verschickt. */
 const PUSH_LATE_LIMIT_MS = 15 * 60 * 1000;
@@ -23,6 +24,10 @@ const PUSH_LATE_LIMIT_MS = 15 * 60 * 1000;
 const PUSH_TTL = 2 * 3600;
 /** Geräte ohne geplante Nachrichten, die so lange nichts gemeldet haben, werden aufgeräumt. */
 const PUSH_STALE_SECONDS = 60 * 86400;
+/** Ein Gerät, dessen Schlüssel so oft hintereinander unbrauchbar ist (PushKeyError), wird vergessen. */
+const PUSH_MAX_FAILS = 5;
+/** Nachrichten dürfen höchstens so weit in der Zukunft liegen – gegen das Offenhalten von Geräten mit Fantasie-Zeitpunkten. */
+const PUSH_MAX_AHEAD_MS = 30 * 86400 * 1000;
 /** Push-Dienste der Browser (Google, Apple, Mozilla, Microsoft) – an andere Adressen schickt der Server nichts. */
 const PUSH_HOSTS = ['fcm.googleapis.com', 'push.apple.com', 'push.services.mozilla.com', 'notify.windows.com'];
 
@@ -178,6 +183,7 @@ function push_valid_items(mixed $items): ?array
     if (!is_array($items) || array_values($items) !== $items || count($items) > PUSH_MAX_ITEMS) {
         return null;
     }
+    $now = (int) floor(microtime(true) * 1000);
     $out = [];
     foreach ($items as $item) {
         $at = $item['at'] ?? null;
@@ -185,6 +191,10 @@ function push_valid_items(mixed $items): ?array
         $title = $item['title'] ?? null;
         $body = $item['body'] ?? null;
         if (!is_int($at) || !is_string($towerId) || !is_string($title) || !is_string($body)) {
+            return null;
+        }
+        // Vergangenes ist erlaubt (fällig oder leicht verspätet), nur die ferne Zukunft nicht.
+        if ($at > $now + PUSH_MAX_AHEAD_MS) {
             return null;
         }
         // Bytes, nicht Zeichen (Umlaute zählen doppelt) – Apple nimmt höchstens 4 KB pro Nachricht.
@@ -259,11 +269,24 @@ function push_vapid_jwt(string $aud, string $subject, string $privatePem): strin
     return "$header.$claims." . b64u_encode(push_der_to_raw($der));
 }
 
+/**
+ * Der Schlüssel des Geräts ist kein Punkt auf P-256 – das liegt am Abo, nicht am Server. Nur dieser Fehler darf dazu
+ * führen, dass ein Gerät vergessen wird; alles andere (openssl, curl, Dateien) kann alle Geräte zugleich treffen.
+ */
+final class PushKeyError extends RuntimeException
+{
+}
+
 /** Verschlüsselt den Inhalt für ein Gerät (RFC 8291, aes128gcm, ein Datensatz). */
 function push_encrypt(string $payload, string $uaPublic, string $authSecret): string
 {
+    // Erst den eigenen Schlüssel: Klappt das nicht, ist openssl selbst das Problem (kein PushKeyError).
     [$local, $asPublic] = push_new_key();
-    $shared = openssl_pkey_derive(push_public_pem($uaPublic), $local);
+    $pem = push_public_pem($uaPublic);
+    if (openssl_pkey_get_public($pem) === false) {
+        throw new PushKeyError('Schlüssel des Geräts ist ungültig');
+    }
+    $shared = openssl_pkey_derive($pem, $local);
     if ($shared === false) {
         throw new RuntimeException('openssl: ECDH fehlgeschlagen');
     }

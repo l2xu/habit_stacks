@@ -255,8 +255,10 @@ anderen Pfad, und zwar **sowohl für PHP im Webserver als auch für den Cronjob*
 
 ### Grenzen
 
-- Der Dienst ist für den **privaten Gebrauch** gedacht: höchstens 50 Geräte und 500 geplante Nachrichten pro Gerät
-  (`PUSH_MAX_DEVICES` und `PUSH_MAX_ITEMS` in [public/push/lib.php](public/push/lib.php)).
+- Der Dienst ist für **kleine Instanzen** gedacht: höchstens 500 Geräte und 500 geplante Nachrichten pro Gerät
+  (`PUSH_MAX_DEVICES` und `PUSH_MAX_ITEMS` in [public/push/lib.php](public/push/lib.php)). Es zählen nur Geräte, für
+  die gerade etwas geplant ist. Die Nachrichten gehen nacheinander raus, bei sehr vielen gleichzeitigen Erinnerungen
+  kommen die letzten also etwas später.
 - `api.php` nimmt nur Anfragen von **derselben Domain** an. App und Push-Dienst müssen also auf demselben Host laufen.
 - Der Plan reicht **14 Tage** weit. Wer die App länger nicht öffnet, bekommt danach keine Nachrichten mehr.
 - Wer **offline** abhakt, bekommt eventuell eine überflüssige Warnung, bis die App wieder online ist und den neuen

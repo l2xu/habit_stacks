@@ -48,8 +48,34 @@ try {
             $items = push_valid_items($in['items'] ?? null) ?? reply(400, ['error' => 'Ungültiger Plan']);
             $stamp = is_int($in['stamp'] ?? null) ? $in['stamp'] : 0;
             $file = push_device_file($sub['endpoint']);
-            if (!is_file($file) && count(push_device_files()) >= PUSH_MAX_DEVICES) {
+            // Nichts geplant: Der Server braucht das Gerät nicht, es belegt also keinen Platz. Plant die App später
+            // wieder etwas, wird es neu angelegt (und bestätigt).
+            if (!$items) {
+                if (is_file($file)) {
+                    push_with_file($file, fn (?array $device) => $device && ($device['stamp'] ?? 0) > $stamp ? $device : null);
+                }
+                reply(200, ['ok' => true, 'items' => 0]);
+            }
+            $isNew = !is_file($file);
+            if ($isNew && count(push_device_files()) >= PUSH_MAX_DEVICES) {
                 reply(429, ['error' => 'Zu viele Geräte']);
+            }
+            if ($isNew) {
+                try {
+                    $verify = push_send($sub, [
+                        'title' => 'Habit Stacks',
+                        'body' => 'Benachrichtigungen sind aktiv.',
+                        'tag' => 'welcome',
+                    ], push_vapid(), push_origin(), 60);
+                } catch (PushKeyError) {
+                    // Schlüssel ist kein gültiger Punkt -> kein echtes Abo. Andere Fehler liegen am Server: 500 (unten).
+                    reply(400, ['error' => 'Abo ließ sich nicht bestätigen']);
+                }
+                // Nur bei beweisbar schlechtem Abo ablehnen (4xx vom Push-Dienst). 2xx ok; Netzfehler/5xx nicht dem Nutzer
+                // anlasten, 429 (Push-Dienst drosselt) auch nicht.
+                if ($verify >= 400 && $verify < 500 && $verify !== 429) {
+                    reply(400, ['error' => 'Abo ließ sich nicht bestätigen']);
+                }
             }
             push_with_file($file, fn (?array $device) => $device && ($device['stamp'] ?? 0) > $stamp ? $device : [
                 'subscription' => $sub,
