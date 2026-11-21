@@ -18,6 +18,8 @@ try {
     $now = (int) floor(microtime(true) * 1000);
     push_with_file(push_cron_file(), fn () => ['at' => $now]);
     $vapid = push_vapid();
+    // Geräte, bei denen etwas anderes als ein ungültiger Schlüssel schiefging – meist ein Problem des Servers.
+    $failed = 0;
 
     foreach (push_device_files() as $file) {
         // Jedes Gerät für sich: Ein defektes Abo darf den Lauf für alle anderen nicht abbrechen.
@@ -60,7 +62,7 @@ try {
                 }
                 return $device;
             });
-        } catch (Throwable $e) {
+        } catch (PushKeyError $e) {
             push_log('cron: ' . basename($file) . ': ' . $e->getMessage());
             // Fehlversuch am Gerät zählen; nach PUSH_MAX_FAILS Versuchen in Folge wird es vergessen, damit es nicht ewig scheitert.
             try {
@@ -74,8 +76,17 @@ try {
             } catch (Throwable $e2) {
                 push_log('cron: ' . basename($file) . ': Fehlerzähler: ' . $e2->getMessage());
             }
-            continue;
+        } catch (Throwable $e) {
+            // Kein Grund, das Gerät zu vergessen: Trifft der Fehler alle (z. B. curl fehlt nach einem PHP-Wechsel),
+            // wären sonst nach wenigen Minuten alle Geräte weg. Die anderen Geräte laufen trotzdem weiter.
+            push_log('cron: ' . basename($file) . ': ' . $e->getMessage());
+            $failed++;
         }
+    }
+    // Fehler melden (Exit 1), damit z. B. Plesk mit „nur bei Fehlern“ Bescheid gibt.
+    if ($failed) {
+        fwrite(STDERR, "$failed Gerät(e) mit Fehler, Details in data/log.php\n");
+        exit(1);
     }
 } catch (Throwable $e) {
     push_log('cron: ' . $e->getMessage());
